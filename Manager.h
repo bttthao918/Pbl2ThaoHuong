@@ -82,6 +82,10 @@ public:
     void viewCustomerReport();
     void exportReport(string filename);
 
+    // ===== NHÓM 6: TƯƠNG TÁC VỚI VÉ =====
+    // Cho phép Manager chỉnh phí của một vé cụ thể (ghi nhận ai chỉnh và ghi chú)
+    void adjustTicketPrice(const string& ticketID, double newFee, class DataManager* dm, const string& note = "");
+
     // Getters
     string getManagerID() const { return managerID; }
     string getShift() const { return shift; }

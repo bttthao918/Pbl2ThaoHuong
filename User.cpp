@@ -1,6 +1,8 @@
 #include "User.h"
 #include <iostream>
 #include <regex>
+#include <fstream>
+#include <cctype>
 using namespace std;
 
 // Constructor
@@ -13,8 +15,6 @@ User::User(string id, string user, string pass, string name,
     fullName = name;
     phoneNumber = phone;
     email = mail;
-    registeredDate = "N/A";
-    isActive = true;
 }
 
 // Đăng nhập
@@ -64,3 +64,32 @@ void User::updateProfile(string name, string phone, string email) {
 
     cout << ">>> Cập nhật thông tin thành công!\n";
 }
+
+
+void User::saveToFile(const string& filename) {
+    ofstream outFile(filename, ios::app);
+    if (!outFile) {
+        cerr << "Không thể mở file để ghi!\n";
+        return;
+    }
+    outFile << userID << "|" << username << "|" << password << "|"
+            << fullName << "|" << phoneNumber << "|" << email << "\n";
+    outFile.close();
+}
+
+
+
+void User::loadFromFile(const string& filename) {
+    ifstream inFile(filename);
+    if (!inFile) {
+        cerr << "Không thể mở file để đọc!\n";
+        return;
+    }
+    string line;
+    while (getline(inFile, line)) {
+        // Có thể parse nếu cần
+        cout << "Dòng dữ liệu: " << line << endl;
+    }
+    inFile.close();
+}
+

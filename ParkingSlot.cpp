@@ -2,46 +2,54 @@
 #include <iostream>
 using namespace std;
 
-// Constructor
-ParkingSlot::ParkingSlot(string id, string zone, int floor, string vType)
-{
-    this->slotID = id;
-    this->zone = zone;
-    this->floor = floor;
-    this->vehicleType = vType;
-    this->isOccupied = false;
-    this->currentVehicleID = "";
-}
+// Default constructor
+ParkingSlot::ParkingSlot()
+    : slotNumber(0), slotID(""), zone(""), floor(0), vehicleType(""),
+      occupied(false), currentVehicleID("") {}
 
-// Chiếm chỗ
-void ParkingSlot::occupy(string vehicleID)
+// Param constructor
+ParkingSlot::ParkingSlot(int slotNumber, string zone, int floor, string vType)
+    : slotNumber(slotNumber), slotID(""), zone(zone), floor(floor),
+      vehicleType(vType), occupied(false), currentVehicleID("") {}
+
+// Chiếm chỗ (biển số)
+void ParkingSlot::occupy(const string& vehicleID)
 {
-    if (isOccupied) {
-        cout << ">>> Lỗi: Vị trí " << slotID << " đã có xe!\n";
+    if (occupied) {
+        cout << ">>> Lỗi: Chỗ " << slotNumber << " đang có xe!\n";
         return;
     }
-
-    isOccupied = true;
+    occupied = true;
     currentVehicleID = vehicleID;
+}
+
+// Chiếm chỗ (biển số + cập nhật loại xe)
+void ParkingSlot::occupy(const string& vehicleID, const string& vehicleType)
+{
+    if (occupied) {
+        cout << ">>> Lỗi: Chỗ " << slotNumber << " đang có xe!\n";
+        return;
+    }
+    occupied = true;
+    currentVehicleID = vehicleID;
+    this->vehicleType = vehicleType;
 }
 
 // Giải phóng chỗ
 void ParkingSlot::release()
 {
-    isOccupied = false;
+    occupied = false;
     currentVehicleID = "";
 }
 
 // Hiển thị thông tin
 void ParkingSlot::display() const
 {
-    cout << "===== PARKING SLOT =====\n";
-    cout << "Slot ID:     " << slotID << endl;
-    cout << "Zone:        " << zone << endl;
-    cout << "Floor:       " << floor << endl;
-    cout << "VehicleType: " << vehicleType << endl;
-    cout << "Occupied:    " << (isOccupied ? "Yes" : "No") << endl;
-    if (isOccupied) {
-        cout << "Vehicle ID:  " << currentVehicleID << endl;
-    }
+    cout << "Slot #" << slotNumber;
+    if (!slotID.empty()) cout << " (" << slotID << ")";
+    cout << "  | Zone: " << zone << " | Floor: " << floor
+         << " | Type: " << vehicleType
+         << " | Occupied: " << (occupied ? "Yes" : "No");
+    if (occupied) cout << " | Vehicle: " << currentVehicleID;
+    cout << endl;
 }

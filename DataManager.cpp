@@ -533,6 +533,11 @@ void DataManager::updateElectricBikePricing(double hourly, double dailyMax) {
     pricing.electricBikeDailyMax = dailyMax;
 }
 double DataManager::calculateFee(ParkingTicket* ticket, Vehicle* vehicle) {
+    // If manager already adjusted the fee on this ticket, use it
+    if (ticket->wasAdjusted() && ticket->getFee() > 0) {
+        return ticket->getFee();
+    }
+
     int hours = ticket->calculateParkingHours();
     double hourlyRate = 0, dailyMax = 0;
     

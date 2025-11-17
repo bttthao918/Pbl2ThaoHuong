@@ -31,8 +31,7 @@ class Customer : public User {
         void checkVehicleStatus(string vehicleID);   // Kiểm tra xe đang đỗ
         double applyDiscount(double originalFee);    // Áp dụng giảm giá
         void updateMembership();                     // Cập nhật hạng thành viên
-        void viewMyProfile();                        // Xem thông tin cá nhân
-        void viewNotes();                            // Xem ghi chú
+        void viewMyProfile();                        // Xem thông tin cá nhân                      // Xem ghi chú
         
         // Getters & Setters
         string getCustomerID() const { return customerID; }
