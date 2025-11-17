@@ -1,4 +1,5 @@
 #include "DataManager.h"
+#include "Exception.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -674,4 +675,546 @@ DoubleLinkedList<ParkingTicket*> DataManager::getCompletedTickets() {
 void DataManager::displayActiveTickets() {
     DoubleLinkedList<ParkingTicket*> activeTickets = getActiveTickets();
     
-    cout << "\n
+     cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║                   VÉ ĐANG HOẠT ĐỘNG                            ║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+    cout << "Số xe đang gửi: " << activeTickets.get_size() << "\n\n";
+    
+    if (activeTickets.is_empty()) {
+        cout << "Không có xe nào trong bãi!\n";
+    } else {
+        activeTickets.for_each([](ParkingTicket*& t) {
+            t->display();
+            cout << "────────────────────────────────────────────────────────────────\n";
+        });
+    }
+}
+
+void DataManager::displayAllTickets() {
+    if (ticketList.is_empty()) {
+        cout << "Chưa có vé nào!\n";
+        return;
+    }
+    
+    cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║                   TẤT CẢ VÉ GỬI XE                             ║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+    cout << "Tổng số vé: " << ticketList.get_size() << "\n\n";
+    
+    ticketList.for_each([](ParkingTicket*& t) {
+        t->display();
+        cout << "────────────────────────────────────────────────────────────────\n";
+    });
+}
+
+DoubleLinkedList<ParkingTicket*> DataManager::getCustomerHistory(string customerPhone) {
+    return ticketList.filter([&](ParkingTicket* const& t) {
+        return t->getCustomerPhone() == customerPhone;
+    });
+}
+
+DoubleLinkedList<ParkingTicket*>* DataManager::getAllTickets() {
+    return &ticketList;
+}
+
+// ==================== NHÓM 8: TÌM KIẾM ====================
+
+DoubleLinkedList<Manager*> DataManager::searchManager(string keyword) {
+    transform(keyword.begin(), keyword.end(), keyword.begin(), ::tolower);
+    
+    return managerList.filter([&](Manager* const& m) {
+        string name = m->getFullName();
+        string id = m->getManagerID();
+        string phone = m->getPhone();
+        
+        transform(name.begin(), name.end(), name.begin(), ::tolower);
+        transform(id.begin(), id.end(), id.begin(), ::tolower);
+        
+        return name.find(keyword) != string::npos || 
+               id.find(keyword) != string::npos ||
+               phone.find(keyword) != string::npos;
+    });
+}
+
+DoubleLinkedList<Customer*> DataManager::searchCustomer(string keyword) {
+    transform(keyword.begin(), keyword.end(), keyword.begin(), ::tolower);
+    
+    return customerList.filter([&](Customer* const& c) {
+        string name = c->getFullName();
+        string id = c->getCustomerID();
+        string phone = c->getPhone();
+        
+        transform(name.begin(), name.end(), name.begin(), ::tolower);
+        transform(id.begin(), id.end(), id.begin(), ::tolower);
+        
+        return name.find(keyword) != string::npos || 
+               id.find(keyword) != string::npos ||
+               phone.find(keyword) != string::npos;
+    });
+}
+
+DoubleLinkedList<Vehicle*> DataManager::searchVehicle(string keyword) {
+    return searchVehicleByKeyword(keyword);
+}
+
+DoubleLinkedList<ParkingTicket*> DataManager::searchTicketByDate(string date) {
+    return ticketList.filter([&](ParkingTicket* const& t) {
+        // So sánh ngày check-in
+        time_t checkInTime = t->getCheckInTime();
+        struct tm* timeinfo = localtime(&checkInTime);
+        char buffer[80];
+        strftime(buffer, 80, "%Y-%m-%d", timeinfo);
+        string ticketDate = string(buffer);
+        
+        return ticketDate == date;
+    });
+}
+
+// ==================== NHÓM 9: LƯU/TẢI DỮ LIỆU ====================
+
+void DataManager::saveAllData() {
+    saveManagers("data_managers.txt");
+    saveCustomers("data_customers.txt");
+    saveVehicles("data_vehicles.txt");
+    saveTickets("data_tickets.txt");
+    cout << "✓ Đã lưu tất cả dữ liệu!\n";
+}
+
+void DataManager::loadAllData() {
+    loadManagers("data_managers.txt");
+    loadCustomers("data_customers.txt");
+    loadVehicles("data_vehicles.txt");
+    loadTickets("data_tickets.txt");
+    cout << "✓ Đã tải tất cả dữ liệu!\n";
+}
+
+void DataManager::saveManagers(string filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        throw InvalidDataException("Không thể mở file để lưu Manager!");
+    }
+    
+    file << managerList.get_size() << endl;
+    
+    managerList.for_each([&](Manager*& m) {
+        file << m->getManagerID() << "|"
+             << m->getUsername() << "|"
+             << m->getFullName() << "|"
+             << m->getPhone() << "|"
+             << m->getEmail() << "|"
+             << m->getShift() << "|"
+             << m->getTotalCheckIns() << "|"
+             << m->getTotalCheckOuts() << "|"
+             << m->getTotalRevenue() << "|"
+             << m->getCustomersManaged() << endl;
+    });
+    
+    file.close();
+}
+
+void DataManager::saveCustomers(string filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        throw InvalidDataException("Không thể mở file để lưu Customer!");
+    }
+    
+    file << customerList.get_size() << endl;
+    
+    customerList.for_each([&](Customer*& c) {
+        file << c->getCustomerID() << "|"
+             << c->getUsername() << "|"
+             << c->getFullName() << "|"
+             << c->getPhone() << "|"
+             << c->getEmail() << "|"
+             << (c->isActive() ? "1" : "0") << endl;
+    });
+    
+    file.close();
+}
+
+void DataManager::saveVehicles(string filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        throw InvalidDataException("Không thể mở file để lưu Vehicle!");
+    }
+    
+    file << vehicleList.get_size() << endl;
+    
+    vehicleList.for_each([&](Vehicle*& v) {
+        file << v->getTypeName() << "|"
+             << v->getLicensePlate() << "|"
+             << v->getOwnerName() << "|"
+             << v->getColor() << endl;
+    });
+    
+    file.close();
+}
+
+void DataManager::saveTickets(string filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        throw InvalidDataException("Không thể mở file để lưu Ticket!");
+    }
+    
+    file << ticketList.get_size() << endl;
+    
+    ticketList.for_each([&](ParkingTicket*& t) {
+        file << t->getTicketID() << "|"
+             << t->getLicensePlate() << "|"
+             << t->getCustomerPhone() << "|"
+             << t->getSlotNumber() << "|"
+             << t->getCheckInTime() << "|"
+             << t->getCheckOutTime() << "|"
+             << t->getFee() << "|"
+             << (t->isCheckedOut() ? "1" : "0") << endl;
+    });
+    
+    file.close();
+}
+
+void DataManager::loadManagers(string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        // File không tồn tại - không sao, bỏ qua
+        return;
+    }
+    
+    int count;
+    file >> count;
+    file.ignore();
+    
+    for (int i = 0; i < count; i++) {
+        string line;
+        getline(file, line);
+        
+        // Parse dữ liệu từ line
+        // TODO: Implement parsing logic
+    }
+    
+    file.close();
+}
+
+void DataManager::loadCustomers(string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        return;
+    }
+    
+    int count;
+    file >> count;
+    file.ignore();
+    
+    for (int i = 0; i < count; i++) {
+        string line;
+        getline(file, line);
+        // TODO: Implement parsing logic
+    }
+    
+    file.close();
+}
+
+void DataManager::loadVehicles(string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        return;
+    }
+    
+    int count;
+    file >> count;
+    file.ignore();
+    
+    for (int i = 0; i < count; i++) {
+        string line;
+        getline(file, line);
+        // TODO: Implement parsing logic
+    }
+    
+    file.close();
+}
+
+void DataManager::loadTickets(string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        return;
+    }
+    
+    int count;
+    file >> count;
+    file.ignore();
+    
+    for (int i = 0; i < count; i++) {
+        string line;
+        getline(file, line);
+        // TODO: Implement parsing logic
+    }
+    
+    file.close();
+}
+
+// ==================== NHÓM 10: TIỆN ÍCH ====================
+
+void DataManager::clearAllData() {
+    managerList.clear();
+    customerList.clear();
+    vehicleList.clear();
+    slotList.clear();
+    ticketList.clear();
+    
+    occupiedSlots = 0;
+    nextTicketID = 1000;
+    
+    cout << "✓ Đã xóa tất cả dữ liệu!\n";
+}
+
+void DataManager::resetSystem() {
+    clearAllData();
+    initializeSlots();
+    initializeDefaultPricing();
+    cout << "✓ Đã reset hệ thống về trạng thái ban đầu!\n";
+}
+
+bool DataManager::isSystemEmpty() {
+    return vehicleList.is_empty() && 
+           customerList.is_empty() && 
+           managerList.is_empty() &&
+           ticketList.is_empty();
+}
+
+void DataManager::displaySystemInfo() {
+    cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║              THÔNG TIN HỆ THỐNG QUẢN LÝ NHÀ XE                ║\n";
+    cout << "╠════════════════════════════════════════════════════════════════╣\n";
+    cout << "║ Version:               1.0.0                                   ║\n";
+    cout << "║ Developed by:          PBL2 Team                               ║\n";
+    cout << "╠════════════════════════════════════════════════════════════════╣\n";
+    cout << "║ Tổng số chỗ đỗ:       " << setw(39) << left << totalSlots << "║\n";
+    cout << "║ Tổng phương tiện:     " << setw(39) << left << getTotalVehicles() << "║\n";
+    cout << "║ Tổng khách hàng:      " << setw(39) << left << getTotalCustomers() << "║\n";
+    cout << "║ Tổng nhân viên:       " << setw(39) << left << getTotalManagers() << "║\n";
+    cout << "║ Tổng vé đã tạo:       " << setw(39) << left << ticketList.get_size() << "║\n";
+    cout << "╠════════════════════════════════════════════════════════════════╣\n";
+    cout << "║ Trạng thái:           " << setw(39) << left << (isSystemEmpty() ? "Rỗng" : "Hoạt động") << "║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+}
+
+void DataManager::generateMonthlyReport() {
+    cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║                      BÁO CÁO THÁNG                             ║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+    
+    // Thống kê các vé đã hoàn thành trong tháng
+    DoubleLinkedList<ParkingTicket*> completedTickets = getCompletedTickets();
+    
+    double totalRevenue = 0;
+    int totalCheckIns = 0;
+    int totalCheckOuts = 0;
+    
+    completedTickets.for_each([&](ParkingTicket*& t) {
+        totalRevenue += t->getFee();
+        totalCheckIns++;
+        if (t->isCheckedOut()) {
+            totalCheckOuts++;
+        }
+    });
+    
+    cout << "Tổng số vé:           " << ticketList.get_size() << "\n";
+    cout << "Vé đã hoàn thành:     " << completedTickets.get_size() << "\n";
+    cout << "Tổng xe vào:          " << totalCheckIns << "\n";
+    cout << "Tổng xe ra:           " << totalCheckOuts << "\n";
+    cout << "Tổng doanh thu:       " << fixed << setprecision(0) << totalRevenue << " VNĐ\n";
+    cout << "════════════════════════════════════════════════════════════════\n";
+}
+
+void DataManager::generateRevenueReport() {
+    cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║                    BÁO CÁO DOANH THU                           ║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+    
+    DoubleLinkedList<ParkingTicket*> completedTickets = getCompletedTickets();
+    
+    double totalRevenue = 0;
+    double motorcycleRevenue = 0;
+    double carRevenue = 0;
+    double electricBikeRevenue = 0;
+    
+    completedTickets.for_each([&](ParkingTicket*& t) {
+        double fee = t->getFee();
+        totalRevenue += fee;
+        
+        string type = t->getVehicleType();
+        if (type == "Motorcycle" || type == "Xe máy") {
+            motorcycleRevenue += fee;
+        } else if (type == "Car" || type == "Ô tô") {
+            carRevenue += fee;
+        } else {
+            electricBikeRevenue += fee;
+        }
+    });
+    
+    cout << "Doanh thu xe máy:      " << fixed << setprecision(0) << motorcycleRevenue << " VNĐ\n";
+    cout << "Doanh thu ô tô:        " << carRevenue << " VNĐ\n";
+    cout << "Doanh thu xe đạp điện: " << electricBikeRevenue << " VNĐ\n";
+    cout << "────────────────────────────────────────────────────────────────\n";
+    cout << "TỔNG CỘNG:             " << totalRevenue << " VNĐ\n";
+    cout << "════════════════════════════════════════════════════════════════\n";
+}
+
+void DataManager::generateCustomerReport() {
+    cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║                    BÁO CÁO KHÁCH HÀNG                          ║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+    
+    cout << "Tổng số khách hàng:    " << getTotalCustomers() << "\n";
+    
+    int activeCustomers = 0;
+    customerList.for_each([&](Customer*& c) {
+        if (c->isActive()) {
+            activeCustomers++;
+        }
+    });
+    
+    cout << "Khách hàng hoạt động:  " << activeCustomers << "\n";
+    cout << "Khách hàng bị khóa:    " << (getTotalCustomers() - activeCustomers) << "\n";
+    cout << "════════════════════════════════════════════════════════════════\n";
+}
+
+double DataManager::getDailyRevenue() {
+    string today = getCurrentDate();
+    DoubleLinkedList<ParkingTicket*> todayTickets = searchTicketByDate(today);
+    
+    double revenue = 0;
+    todayTickets.for_each([&](ParkingTicket*& t) {
+        if (t->isCheckedOut()) {
+            revenue += t->getFee();
+        }
+    });
+    
+    return revenue;
+}
+
+double DataManager::getMonthlyRevenue() {
+    DoubleLinkedList<ParkingTicket*> completedTickets = getCompletedTickets();
+    
+    double revenue = 0;
+    completedTickets.for_each([&](ParkingTicket*& t) {
+        revenue += t->getFee();
+    });
+    
+    return revenue;
+}
+
+int DataManager::getDailyCheckIns() {
+    string today = getCurrentDate();
+    DoubleLinkedList<ParkingTicket*> todayTickets = searchTicketByDate(today);
+    return todayTickets.get_size();
+}
+
+int DataManager::getDailyCheckOuts() {
+    string today = getCurrentDate();
+    DoubleLinkedList<ParkingTicket*> todayTickets = searchTicketByDate(today);
+    
+    int checkOuts = 0;
+    todayTickets.for_each([&](ParkingTicket*& t) {
+        if (t->isCheckedOut()) {
+            checkOuts++;
+        }
+    });
+    
+    return checkOuts;
+}
+
+DoubleLinkedList<Vehicle*> DataManager::getVehiclesByType(string type) {
+    return vehicleList.filter([&](Vehicle* const& v) {
+        return v->getTypeName() == type;
+    });
+}
+
+void DataManager::displayVehiclesByType(string type) {
+    DoubleLinkedList<Vehicle*> vehicles = getVehiclesByType(type);
+    
+    cout << "\n╔════════════════════════════════════════════════════════════════╗\n";
+    cout << "║         DANH SÁCH PHƯƠNG TIỆN - " << setw(32) << left << type << "║\n";
+    cout << "╚════════════════════════════════════════════════════════════════╝\n";
+    cout << "Số lượng: " << vehicles.get_size() << "\n\n";
+    
+    if (vehicles.is_empty()) {
+        cout << "Không có xe loại này!\n";
+    } else {
+        vehicles.for_each([](Vehicle*& v) {
+            v->display();
+            cout << "────────────────────────────────────────────────────────────────\n";
+        });
+    }
+}
+
+DoubleLinkedList<ParkingSlot*> DataManager::getSlotsByZone(string zone) {
+    return slotList.filter([&](ParkingSlot* const& s) {
+        return s->getZone() == zone;
+    });
+}
+
+void DataManager::updateManager(string managerID, Manager* newData) {
+    Manager* mgr = findManager(managerID);
+    if (mgr) {
+        *mgr = *newData;
+    } else {
+        throw NotFoundException("Không tìm thấy Manager!");
+    }
+}
+
+void DataManager::deleteManager(string managerID) {
+    bool removed = managerList.remove_if([&](Manager* const& m) {
+        return m->getManagerID() == managerID;
+    });
+    
+    if (!removed) {
+        throw NotFoundException("Không tìm thấy Manager!");
+    }
+}
+
+void DataManager::updateCustomer(string customerID, Customer* newData) {
+    Customer* cust = findCustomer(customerID);
+    if (cust) {
+        *cust = *newData;
+    } else {
+        throw NotFoundException("Không tìm thấy Customer!");
+    }
+}
+
+void DataManager::deleteCustomer(string customerID) {
+    bool removed = customerList.remove_if([&](Customer* const& c) {
+        return c->getCustomerID() == customerID;
+    });
+    
+    if (!removed) {
+        throw NotFoundException("Không tìm thấy Customer!");
+    }
+}
+
+void DataManager::updateVehicle(string licensePlate, Vehicle* newData) {
+    Vehicle* vehicle = findVehicle(licensePlate);
+    if (vehicle) {
+        *vehicle = *newData;
+    } else {
+        throw NotFoundException("Không tìm thấy xe!");
+    }
+}
+
+void DataManager::deleteVehicle(string licensePlate) {
+    bool removed = vehicleList.remove_if([&](Vehicle* const& v) {
+        return v->getLicensePlate() == licensePlate;
+    });
+    
+    if (!removed) {
+        throw NotFoundException("Không tìm thấy xe!");
+    }
+}
+
+void DataManager::resetCustomerPassword(string customerID, string newPassword) {
+    Customer* cust = findCustomer(customerID);
+    if (cust) {
+        cust->setPassword(newPassword);
+    } else {
+        throw NotFoundException("Không tìm thấy khách hàng!");
+    }
+}
