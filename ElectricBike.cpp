@@ -1,5 +1,9 @@
 #include "ElectricBike.h"
 #include <iostream>
+#include <ctime>
+#include <cmath>
+#include <sstream>
+#include <iomanip>
 using namespace std;
 
 ElectricBike::ElectricBike(string id, string owner, string phone,
@@ -21,8 +25,44 @@ void ElectricBike::display() const {
     cout << "Brand: " << brand << endl;
 }
 
-double ElectricBike::calculateParkingFee() const {
-    double hours = 1;
-    double fee = hours * 2000;
-    return (fee > 15000 ? 15000 : fee);
+double ElectricBike::calculateParkingFee(const RateManager& rateManager) const {
+    // Tính số giờ gửi xe
+    time_t now = time(nullptr);
+
+    // Convert entryTime (stored as string) to time_t.
+    // Try epoch-seconds string first, otherwise try parsing "YYYY-MM-DD HH:MM:SS".
+    time_t entry_t = 0;
+    bool parsed = false;
+    try {
+        entry_t = static_cast<time_t>(std::stoll(entryTime));
+        parsed = true;
+    } catch (...) {
+        // fall through to try parsing human-readable format
+    }
+
+    if (!parsed) {
+        std::tm tm = {};
+        std::istringstream ss(entryTime);
+        ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+        if (!ss.fail()) {
+            entry_t = mktime(&tm);
+            parsed = true;
+        }
+    }
+
+    if (!parsed) {
+        // Fallback: if parsing failed, assume entry time equals now so duration is minimum 0.
+        entry_t = now;
+    }
+
+    double hours = difftime(now, entry_t) / 3600.0;
+    if (hours < 1) hours = 1; // tối thiểu 1 giờ
+
+    // Lấy giá từ RateManager
+    double baseRate = rateManager.getRate("ElectricBike");
+
+    // Tính phí
+    double fee = hours * baseRate;
+    return (fee > 15000 ? 15000 : fee); // giới hạn tối đa
 }
+

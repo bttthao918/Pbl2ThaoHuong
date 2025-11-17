@@ -1,75 +1,62 @@
 #include "ParkingTicket.h"
 #include <iostream>
 #include <iomanip>
+#include <cmath>
+
 using namespace std;
 
-// Tạo ID vé dạng TK + yyyyMMddHHmm + random số
-static int AUTO_ID = 1;
+ParkingTicket::ParkingTicket()
+    : ticketID(""), licensePlate(""), customerPhone(""), customerName(""),
+      vehicleType(""), slotNumber(0), checkInTime(0), checkOutTime(0), fee(0),
+    checkedOut(false), managerAdjusted(false), adjustedBy(""), adjustedAt(0), adjustedNote("") {}
 
-// Constructor
-ParkingTicket::ParkingTicket(string vehicleID, string customerID,
-                             string managerID, string entryTime,
-                             string slotID)
-{
-    this->vehicleID = vehicleID;
-    this->customerID = customerID;
-    this->managerID = managerID;
-    this->entryTime = entryTime;
-    this->parkingSlotID = slotID;
-
-    this->exitTime = "";
-    this->fee = 0;
-    this->discount = 0;
-    this->finalFee = 0;
-    this->status = "Active";
-
-    // Auto sinh ticket ID: TK0001, TK0002,...
-    ticketID = "TK" + to_string(1000 + AUTO_ID);
-    AUTO_ID++;
+int ParkingTicket::calculateParkingHours() const {
+    time_t end = checkedOut ? checkOutTime : time(nullptr);
+    if (checkInTime == 0) return 0;
+    double seconds = difftime(end, checkInTime);
+    double hours = seconds / 3600.0;
+    // Làm tròn lên mỗi phần giờ => tính theo giờ tính phí
+    return (int)ceil(hours <= 0.0 ? 1.0 : hours);
 }
 
-// Tính số giờ
-double ParkingTicket::calculateDuration() const {
-    if (exitTime == "") return 0;
-
-    // Ở đây anh demo, không parse thời gian thật
-    // Em muốn tính giờ chính xác -> anh viết hàm parse ngày giờ riêng
-
-    return 1.0; // tạm thời = 1 giờ cho demo
-}
-
-// Đóng vé
-void ParkingTicket::closeTicket(string exitTime, double fee, double discount) {
-    this->exitTime = exitTime;
-    this->fee = fee;
-    this->discount = discount;
-    this->finalFee = fee - discount;
-    if (this->finalFee < 0) this->finalFee = 0;
-    this->status = "Completed";
-}
-
-// In vé đơn giản
-void ParkingTicket::printTicket() const {
-    cout << "\n===== PARKING TICKET =====\n";
-    cout << "Ticket ID:   " << ticketID << endl;
-    cout << "Vehicle ID:  " << vehicleID << endl;
-    cout << "Customer ID: " << customerID << endl;
-    cout << "Manager ID:  " << managerID << endl;
-    cout << "Entry Time:  " << entryTime << endl;
-    cout << "Exit Time:   " << exitTime << endl;
-    cout << "Slot:        " << parkingSlotID << endl;
-    cout << "Fee:         " << fee << " VND\n";
-    cout << "Discount:    " << discount << " VND\n";
-    cout << "Final Fee:   " << finalFee << " VND\n";
-    cout << "Status:      " << status << endl;
-}
-
-// Hiển thị ngắn gọn
 void ParkingTicket::display() const {
-    cout << left << setw(10) << ticketID
-         << setw(12) << vehicleID
-         << setw(12) << customerID
-         << setw(10) << parkingSlotID
-         << setw(10) << status
-         << endl;
+    cout << "Ticket: " << ticketID << " | Plate: " << licensePlate
+         << " | Slot: " << slotNumber << " | Type: " << vehicleType
+         << " | Check-in: ";
+    if (checkInTime) {
+        char buf[64];
+        tm* t = localtime(&checkInTime);
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
+        cout << buf;
+    } else cout << "-";
+
+    cout << " | Check-out: ";
+    if (checkedOut && checkOutTime) {
+        char buf2[64];
+        tm* t2 = localtime(&checkOutTime);
+        strftime(buf2, sizeof(buf2), "%Y-%m-%d %H:%M:%S", t2);
+        cout << buf2;
+    } else cout << "-";
+
+    cout << " | Fee: " << fee << (checkedOut ? " (paid)" : " (open)") << endl;
+    if (managerAdjusted) {
+        cout << "    [Adjusted by: " << adjustedBy << " at ";
+        if (adjustedAt) {
+            char buf[64];
+            tm* t = localtime(&adjustedAt);
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
+            cout << buf;
+        } else cout << "-";
+        cout << "]";
+        if (!adjustedNote.empty()) cout << " Note: " << adjustedNote;
+        cout << endl;
+    }
+}
+
+void ParkingTicket::managerAdjustFee(double newFee, const string& managerID, const string& note) {
+    fee = newFee;
+    managerAdjusted = true;
+    adjustedBy = managerID;
+    adjustedAt = time(nullptr);
+    adjustedNote = note;
 }

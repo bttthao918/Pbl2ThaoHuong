@@ -13,7 +13,7 @@ public:
                  string slot, string ticket, int battery, string brand);
 
     void display() const override;
-    double calculateParkingFee() const override;
+    double calculateParkingFee(const RateManager& rateManager) const;
 };
 
 #endif

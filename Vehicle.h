@@ -2,6 +2,7 @@
 #define VEHICLE_H
 
 #include <string>
+#include "RateManager.h"
 using namespace std;
 
 class Vehicle {
@@ -23,7 +24,7 @@ public:
     void setExitTime(string exit);
 
     virtual void display() const = 0;
-    virtual double calculateParkingFee() const = 0;
+    virtual double calculateParkingFee(const RateManager& rateManager) const = 0;
 };
 
 #endif

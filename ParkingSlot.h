@@ -6,25 +6,38 @@ using namespace std;
 
 class ParkingSlot {
 private:
-    string slotID;            // Mã vị trí (A01, B15,...)
+    int slotNumber;           // Số thứ tự chỗ đỗ (1..n)
+    string slotID;            // Mã vị trí (A01, B15,...) - có thể rỗng nếu dùng số
     string zone;              // Khu vực (A/B/C)
     int floor;                // Tầng
     string vehicleType;       // Loại xe cho phép: Motorcycle/Car/ElectricBike
-    bool isOccupied;          // true nếu đang có xe
+    bool occupied;            // true nếu đang có xe
     string currentVehicleID;  // biển số xe đang đỗ
 
 public:
-    // Constructor
-    ParkingSlot(string id, string zone, int floor, string vType);
+    // Constructors
+    ParkingSlot();
+    ParkingSlot(int slotNumber, string zone, int floor, string vType);
 
     // Methods
-    void occupy(string vehicleID);  // chiếm chỗ
-    void release();                 // trả chỗ
-    void display() const;           // hiển thị thông tin
+    // Chiếm chỗ với biển số và (tuỳ chọn) loại xe
+    void occupy(const string& vehicleID, const string& vehicleType);
+    // Giải phóng chỗ
+    void release();
+    // Hiển thị thông tin
+    void display() const;
+
+    // Setters
+    void setSlotNumber(int num) { slotNumber = num; }
+    void setSlotID(const string& id) { slotID = id; }
+    void setZone(const string& z) { zone = z; }
+    void setFloor(int f) { floor = f; }
+    void setVehicleType(const string& vt) { vehicleType = vt; }
 
     // Getters
+    int getSlotNumber() const { return slotNumber; }
     string getSlotID() const { return slotID; }
-    bool getIsOccupied() const { return isOccupied; }
+    bool isOccupied() const { return occupied; }
     string getZone() const { return zone; }
     string getVehicleType() const { return vehicleType; }
     string getCurrentVehicleID() const { return currentVehicleID; }

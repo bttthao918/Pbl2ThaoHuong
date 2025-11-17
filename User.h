@@ -4,26 +4,27 @@
 #include <string>
 using namespace std;
 
-class User {
+class User
+{
 protected:
-    string userID;         
-    string username;       
-    string password;       
-    string fullName;       
-    string phoneNumber;    
-    string email;          
-    string registeredDate; 
-    bool isActive;         
+    string userID;
+    string username;
+    string password;
+    string fullName;
+    string phoneNumber;
+    string email;
 
 public:
     // Constructor
-    User(string id, string user, string pass, string name, 
+    User(string id, string user, string pass, string name,
          string phone, string mail);
 
     // Pure virtual methods
     virtual void display() = 0;
     virtual string getUserType() = 0;
     virtual void showMenu() = 0;
+    virtual void saveToFile(const string &filename);
+    virtual void loadFromFile(const string &filename);
 
     // Common methods
     bool login(string user, string pass);
@@ -38,9 +39,6 @@ public:
     string getFullName() const { return fullName; }
     string getPhoneNumber() const { return phoneNumber; }
     string getEmail() const { return email; }
-    bool getIsActive() const { return isActive; }
-
-    void setIsActive(bool status) { isActive = status; }
 
     virtual ~User() {}
 };

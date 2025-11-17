@@ -13,7 +13,7 @@ public:
         string slot, string ticket, string plateType, int seats);
 
     void display() const override;
-    double calculateParkingFee() const override;
+    double calculateParkingFee(const RateManager& rateManager) const;
 };
 
 #endif

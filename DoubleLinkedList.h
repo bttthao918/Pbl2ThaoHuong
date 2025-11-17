@@ -1,3 +1,4 @@
+// ...existing code...
 #ifndef DOUBLELINKEDLIST_H
 #define DOUBLELINKEDLIST_H
 
@@ -161,6 +162,15 @@ public:
 
     Iterator begin() { return Iterator(head); }
     Iterator end() { return Iterator(nullptr); }
+
+    // --- bổ sung: truy cập head/tail và một vài alias tiện dụng ---
+    Node<T>* getHead() const { return head; }
+    Node<T>* getTail() const { return tail; }
+
+    // alias tương thích với code cũ
+    void pushBack(const T& value) { push_back(value); }
+    int getSize() const { return get_size(); }
+    bool isEmpty() const { return is_empty(); }
 };
 
 #endif

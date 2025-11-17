@@ -2,6 +2,7 @@
 #define MOTORCYCLE_H
 
 #include "Vehicle.h"
+#include "RateManager.h"
 
 class Motorcycle : public Vehicle {
 private:
@@ -13,7 +14,7 @@ public:
                string slot, string ticket, int capacity, bool helmet);
 
     void display() const override;
-    double calculateParkingFee() const override;
+   double calculateParkingFee(const RateManager& rateManager) const;
 };
 
 #endif
