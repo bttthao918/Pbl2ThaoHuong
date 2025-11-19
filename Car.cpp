@@ -30,6 +30,11 @@ double Car::calculateParkingFee(long long minutes) const
     return (minutes / 60.0) * rate;
 }
 
+string Car::getTypeString() const
+{
+    return "Car";
+}
+
 string Car::toFileString() const
 {
     ostringstream oss;

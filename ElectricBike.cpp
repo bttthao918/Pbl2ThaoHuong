@@ -28,6 +28,11 @@ double ElectricBike::calculateParkingFee(long long minutes) const
     return (minutes / 60.0) * HOURLY_RATE;
 }
 
+string ElectricBike::getTypeString() const
+{
+    return "ElectricBike";
+}
+
 string ElectricBike::toFileString() const
 {
     ostringstream oss;

@@ -1009,4 +1009,195 @@ void adminBookingManagement(ParkingManager &manager)
     {
         cout << "Loi: " << e.what() << endl;
     }
+    pause();
+}
+// Hàm quản lý ticket cho Admin
+void adminTicketManagement(ParkingManager &manager)
+{
+    clearScreen();
+    cout << "========== QUAN LY TICKET ==========\n";
+    cout << "1. Xem tat ca ticket\n";
+    cout << "2. Xem ticket dang hoat dong\n";
+    cout << "3. Tim kiem ticket\n";
+    cout << "4. Sap xep theo thoi gian\n";
+    cout << "5. Quay lai\n";
+
+    int choice;
+    cout << "Nhap lua chon: ";
+    cin >> choice;
+    cin.ignore();
+
+    try
+    {
+        switch (choice)
+        {
+        case 1:
+        {
+            auto tickets = manager.getAllTickets();
+            cout << "\n--- TAT CA TICKET ---\n";
+            if (tickets.empty())
+            {
+                cout << "Chua co ticket nao.\n";
+            }
+            else
+            {
+                int count = 1;
+                for (auto it = tickets.begin(); it != tickets.end(); ++it)
+                {
+                    cout << "\n"
+                         << count++ << ". ";
+                    it->displayInfo();
+                    cout << "----------------------------\n";
+                }
+            }
+            break;
+        }
+        case 2:
+        {
+            auto tickets = manager.getActiveTickets();
+            cout << "\n--- TICKET DANG HOAT DONG ---\n";
+            if (tickets.empty())
+            {
+                cout << "Khong co ticket nao dang hoat dong.\n";
+            }
+            else
+            {
+                int count = 1;
+                for (auto it = tickets.begin(); it != tickets.end(); ++it)
+                {
+                    cout << "\n"
+                         << count++ << ". ";
+                    it->displayInfo();
+                    cout << "----------------------------\n";
+                }
+            }
+            break;
+        }
+        case 3:
+        {
+            string keyword;
+            cout << "Nhap tu khoa tim kiem: ";
+            getline(cin, keyword);
+
+            auto results = manager.searchTickets(keyword);
+            cout << "\n--- KET QUA TIM KIEM ---\n";
+            if (results.empty())
+            {
+                cout << "Khong tim thay ket qua nao.\n";
+            }
+            else
+            {
+                int count = 1;
+                for (auto it = results.begin(); it != results.end(); ++it)
+                {
+                    cout << "\n"
+                         << count++ << ". ";
+                    it->displayInfo();
+                    cout << "----------------------------\n";
+                }
+            }
+            break;
+        }
+        case 4:
+        {
+            manager.sortTicketsByTime();
+            cout << "\nDa sap xep ticket theo thoi gian (moi nhat truoc)!\n";
+            break;
+        }
+        }
+    }
+    catch (const exception &e)
+    {
+        cout << "Loi: " << e.what() << endl;
+    }
+
+    pause();
+}
+
+// Hàm thống kê và báo cáo cho Admin
+void adminStatistics(ParkingManager &manager)
+{
+    while (true)
+    {
+        clearScreen();
+        cout << "========== THONG KE & BAO CAO ==========\n";
+        cout << "1. Bao cao ngay\n";
+        cout << "2. Bao cao thang\n";
+        cout << "3. Thong ke tong quat\n";
+        cout << "4. Doanh thu theo khoang thoi gian\n";
+        cout << "5. Quay lai\n";
+
+        int choice;
+        cout << "Nhap lua chon: ";
+        cin >> choice;
+        cin.ignore();
+
+        if (choice == 5)
+            break;
+
+        try
+        {
+            switch (choice)
+            {
+            case 1:
+            {
+                manager.generateDailyReport();
+                break;
+            }
+            case 2:
+            {
+                manager.generateMonthlyReport();
+                break;
+            }
+            case 3:
+            {
+                cout << "\n========== THONG KE TONG QUAT ==========\n";
+                cout << "Tong so nguoi dung: " << manager.getAllCustomers().size()
+                     << " khach hang, " << manager.getAllAdmins().size() << " quan ly\n";
+                cout << "Tong so xe dang ky: " << manager.getAllVehicles().size() << "\n";
+                cout << "Tong so cho do: " << manager.getTotalSlots() << "\n";
+                cout << "   - Dang su dung: " << manager.getOccupiedSlotCount() << "\n";
+                cout << "   - Con trong (Xe may): "
+                     << manager.getAvailableSlotCount(VehicleType::MOTORCYCLE) << "\n";
+                cout << "   - Con trong (O to): "
+                     << manager.getAvailableSlotCount(VehicleType::CAR) << "\n";
+                cout << "   - Con trong (Xe dap dien): "
+                     << manager.getAvailableSlotCount(VehicleType::ELECTRIC_BIKE) << "\n";
+                cout << "Tong so booking: " << manager.getAllBookings().size() << "\n";
+                cout << "Tong so ticket: " << manager.getAllTickets().size() << "\n";
+                cout << "   - Dang hoat dong: " << manager.getActiveTickets().size() << "\n";
+                cout << "Tong doanh thu: " << fixed << setprecision(2)
+                     << manager.getTotalRevenue() << " VND\n";
+                cout << "========================================\n";
+                break;
+            }
+            case 4:
+            {
+                int startHours, endHours;
+                cout << "Thoi gian bat dau (so gio truoc tinh tu bay gio): ";
+                cin >> startHours;
+                cout << "Thoi gian ket thuc (so gio truoc tinh tu bay gio): ";
+                cin >> endHours;
+                cin.ignore();
+
+                time_t now = time(nullptr);
+                time_t startTime = now - (startHours * 3600);
+                time_t endTime = now - (endHours * 3600);
+
+                double revenue = manager.getRevenueByPeriod(startTime, endTime);
+                cout << "\nDoanh thu trong khoang thoi gian: "
+                     << fixed << setprecision(2) << revenue << " VND\n";
+                break;
+            }
+            default:
+                cout << "Lua chon khong hop le!\n";
+            }
+        }
+        catch (const exception &e)
+        {
+            cout << "Loi: " << e.what() << endl;
+        }
+
+        pause();
+    }
 }

@@ -36,12 +36,14 @@ bool ParkingManager::registerUser(const string &username, const string &password
         if (role == UserRole::CUSTOMER)
         {
             newUser = make_shared<Customer>(userId, username, password,
-                                                 fullName, phone, email);
+                                            fullName, phone, email);
         }
         else
         {
+            string employeeID = "EMP" + userId.substr(3);
+
             newUser = make_shared<Admin>(userId, username, password,
-                                              fullName, phone, email, "General", "Staff");
+                                         fullName, phone, email, employeeID);
         }
 
         users.pushBack(newUser);
@@ -170,16 +172,16 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
         {
         case VehicleType::MOTORCYCLE:
             newVehicle = make_shared<Motorcycle>(vehicleId, licensePlate,
-                                                      customerId, brand, model, color, 150);
+                                                 customerId, brand, model, color, 150);
             break;
         case VehicleType::CAR:
             newVehicle = make_shared<Car>(vehicleId, licensePlate,
-                                               customerId, brand, model, color, 5, false);
+                                          customerId, brand, model, color, 5, false);
             break;
         case VehicleType::ELECTRIC_BIKE:
             newVehicle = make_shared<ElectricBike>(vehicleId, licensePlate,
-                                                        customerId, brand, model, color,
-                                                        10000, 45);
+                                                   customerId, brand, model, color,
+                                                   10000, 45);
             break;
         }
 
@@ -405,7 +407,7 @@ ParkingSlot *ParkingManager::findAvailableSlot(VehicleType type)
 }
 
 string ParkingManager::checkIn(const string &customerId, const string &vehicleId,
-                                    const string &bookingId)
+                               const string &bookingId)
 {
     // Verify customer and vehicle
     Customer *customer = getCustomer(customerId);
@@ -661,7 +663,7 @@ void ParkingManager::generateDailyReport() const
 
     cout << "\n2. DOANH THU:\n";
     cout << "   - Doanh thu hom nay: " << fixed << setprecision(2)
-              << dailyRevenue << " VND" << endl;
+         << dailyRevenue << " VND" << endl;
     cout << "   - Tong doanh thu: " << getTotalRevenue() << " VND" << endl;
 
     // Active tickets
@@ -694,7 +696,7 @@ void ParkingManager::generateMonthlyReport() const
     double monthlyRevenue = getRevenueByPeriod(startOfMonth, now);
 
     cout << "Doanh thu thang nay: " << fixed << setprecision(2)
-              << monthlyRevenue << " VND" << endl;
+         << monthlyRevenue << " VND" << endl;
 
     // Count tickets by type
     int motorcycleTickets = 0, carTickets = 0, electricBikeTickets = 0;
