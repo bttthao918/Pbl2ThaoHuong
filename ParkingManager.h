@@ -2,19 +2,19 @@
 #define PARKING_MANAGER_H
 
 #include "DoubleLinkedList.h"
-#include "User.h"
-#include "Customer.h"
-#include "Admin.h"
 #include "Vehicle.h"
+#include "User.h"
+#include "Admin.h"
+#include "Customer.h"
+#include "Car.h"
+#include "Motorcycle.h"
+#include "ElectricBike.h"
+#include "Utils.h"
 #include "ParkingSlot.h"
 #include "Booking.h"
 #include "ParkingTicket.h"
-#include "Exceptions.h"      // THÊM
-
 #include <string>
 #include <memory>
-
-using namespace std;        // THÊM
 
 class ParkingManager
 {
@@ -25,8 +25,9 @@ private:
     DoubleLinkedList<Booking> bookings;
     DoubleLinkedList<ParkingTicket> tickets;
 
-    shared_ptr<User> currentUser;
+    shared_ptr<User> currentUser; // User đang đăng nhập
 
+    // File paths
     const string USERS_FILE = "users.txt";
     const string VEHICLES_FILE = "vehicles.txt";
     const string SLOTS_FILE = "slots.txt";
@@ -34,35 +35,34 @@ private:
     const string TICKETS_FILE = "tickets.txt";
 
 public:
+    // Constructor & Destructor
     ParkingManager();
     ~ParkingManager();
 
-    // User
+    // User management
     bool registerUser(const string &username, const string &password,
                       const string &fullName, const string &phone,
                       const string &email, UserRole role);
-
     bool login(const string &username, const string &password);
     void logout();
-
     shared_ptr<User> getCurrentUser() const { return currentUser; }
     bool isLoggedIn() const { return currentUser != nullptr; }
 
+    // Customer specific
     Customer *getCustomer(const string &customerId);
     DoubleLinkedList<shared_ptr<User>> getAllCustomers();
     bool updateCustomerInfo(const string &customerId, const string &fullName,
                             const string &phone, const string &email);
     bool addBalance(const string &customerId, double amount);
 
-    // Admin
+    // Admin specific
     Admin *getAdmin(const string &adminId);
     DoubleLinkedList<shared_ptr<User>> getAllAdmins();
 
-    // Vehicle
+    // Vehicle management
     bool registerVehicle(const string &licensePlate, VehicleType type,
                          const string &brand, const string &model,
                          const string &color, const string &customerId);
-
     shared_ptr<Vehicle> getVehicle(const string &vehicleId);
     shared_ptr<Vehicle> getVehicleByPlate(const string &plate);
     DoubleLinkedList<shared_ptr<Vehicle>> getVehiclesByCustomer(const string &customerId);
@@ -71,7 +71,7 @@ public:
                        const string &model, const string &color);
     bool deleteVehicle(const string &vehicleId);
 
-    // Parking slot
+    // Parking slot management
     bool addParkingSlot(const string &slotNumber, VehicleType type);
     ParkingSlot *getParkingSlot(const string &slotId);
     ParkingSlot *getParkingSlotByNumber(const string &slotNumber);
@@ -80,7 +80,7 @@ public:
     bool updateSlotStatus(const string &slotId, SlotStatus status);
     bool deleteParkingSlot(const string &slotId);
 
-    // Booking
+    // Booking management
     bool createBooking(const string &customerId, const string &vehicleId,
                        time_t expectedArrival);
     Booking *getBooking(const string &bookingId);
@@ -89,9 +89,9 @@ public:
     bool confirmBooking(const string &bookingId);
     bool cancelBooking(const string &bookingId);
 
-    // Ticket
+    // Ticket management (Check-in/Check-out)
     string checkIn(const string &customerId, const string &vehicleId,
-                   const string &bookingId = "");
+                        const string &bookingId = ""); // Return ticketId
     bool checkOut(const string &ticketId);
     ParkingTicket *getTicket(const string &ticketId);
     DoubleLinkedList<ParkingTicket> getTicketsByCustomer(const string &customerId);
@@ -99,7 +99,7 @@ public:
     DoubleLinkedList<ParkingTicket> getAllTickets();
     DoubleLinkedList<ParkingTicket> getActiveTickets();
 
-    // Search
+    // Search & Filter
     DoubleLinkedList<shared_ptr<User>> searchUsers(const string &keyword);
     DoubleLinkedList<shared_ptr<Vehicle>> searchVehicles(const string &keyword);
     DoubleLinkedList<ParkingTicket> searchTickets(const string &keyword);
@@ -109,22 +109,21 @@ public:
     void sortVehiclesByPlate();
     void sortTicketsByTime();
 
-    // Statistics
+    // Statistics & Reports
     int getTotalSlots() const;
     int getAvailableSlotCount(VehicleType type) const;
     int getOccupiedSlotCount() const;
     double getTotalRevenue() const;
     double getRevenueByPeriod(time_t startTime, time_t endTime) const;
-
     void generateDailyReport() const;
     void generateMonthlyReport() const;
 
-    // Global load/save
+    // File operations
     void saveAllData();
     void loadAllData();
 
 private:
-    // File helpers
+    // Helper functions
     void loadUsers();
     void saveUsers();
     void loadVehicles();
@@ -136,7 +135,6 @@ private:
     void loadTickets();
     void saveTickets();
 
-    // ID helpers
     string generateUserId();
     string generateVehicleId();
     string generateSlotId();

@@ -1,5 +1,7 @@
 #include "Booking.h"
-#include "Exeptions.h"
+#include "Exceptions.h"
+#include "Utils.h"
+#include <iostream>
 #include <sstream>
 using namespace std;
 
@@ -12,46 +14,56 @@ Booking::Booking(const string &id, const string &custId,
       bookingTime(time(nullptr)), expectedArrival(arrival),
       status(BookingStatus::PENDING), ticketId("") {}
 
-void Booking::confirm() {
-    if (status != BookingStatus::PENDING) {
+void Booking::confirm()
+{
+    if (status != BookingStatus::PENDING)
+    {
         throw InvalidInputException("Chi co the xac nhan booking dang cho");
     }
     status = BookingStatus::CONFIRMED;
 }
 
-void Booking::cancel() {
-    if (status == BookingStatus::COMPLETED) {
+void Booking::cancel()
+{
+    if (status == BookingStatus::COMPLETED)
+    {
         throw InvalidInputException("Khong the huy booking da hoan thanh");
     }
     status = BookingStatus::CANCELLED;
 }
 
-void Booking::complete() {
-    if (status != BookingStatus::CONFIRMED) {
+void Booking::complete()
+{
+    if (status != BookingStatus::CONFIRMED)
+    {
         throw InvalidInputException("Booking chua duoc xac nhan");
     }
     status = BookingStatus::COMPLETED;
 }
 
-bool Booking::isExpired() const {
+bool Booking::isExpired() const
+{
     time_t now = time(nullptr);
     return (status == BookingStatus::CONFIRMED || status == BookingStatus::PENDING) &&
            (now > expectedArrival + 1800); // 30 phút
 }
 
-void Booking::displayInfo() const {
+void Booking::displayInfo() const
+{
     cout << "Booking ID: " << bookingId << endl;
     cout << "Khach hang ID: " << customerId << endl;
     cout << "Xe ID: " << vehicleId << endl;
     cout << "Thoi gian dat: " << Utils::timeToString(bookingTime) << endl;
     cout << "Du kien den: " << Utils::timeToString(expectedArrival) << endl;
     cout << "Trang thai: " << statusToString(status) << endl;
-    if (!ticketId.empty()) {
+    if (!ticketId.empty())
+    {
         cout << "Ticket ID: " << ticketId << endl;
     }
 }
 
-string Booking::toFileString() const {
+string Booking::toFileString() const
+{
     ostringstream oss;
     oss << bookingId << "|" << customerId << "|" << vehicleId << "|"
         << bookingTime << "|" << expectedArrival << "|"
@@ -59,7 +71,8 @@ string Booking::toFileString() const {
     return oss.str();
 }
 
-void Booking::fromFileString(const string &line) {
+void Booking::fromFileString(const string &line)
+{
     istringstream iss(line);
     string statusStr;
     getline(iss, bookingId, '|');
@@ -74,30 +87,44 @@ void Booking::fromFileString(const string &line) {
     getline(iss, ticketId);
 }
 
-ostream &operator<<(ostream &os, const Booking &booking) {
+ostream &operator<<(ostream &os, const Booking &booking)
+{
     os << "Booking " << booking.bookingId << " - "
        << Booking::statusToString(booking.status);
     return os;
 }
 
-bool Booking::operator==(const Booking &other) const {
+bool Booking::operator==(const Booking &other) const
+{
     return bookingId == other.bookingId;
 }
 
-string Booking::statusToString(BookingStatus status) {
-    switch (status) {
-    case BookingStatus::PENDING: return "PENDING";
-    case BookingStatus::CONFIRMED: return "CONFIRMED";
-    case BookingStatus::CANCELLED: return "CANCELLED";
-    case BookingStatus::COMPLETED: return "COMPLETED";
-    default: return "UNKNOWN";
+string Booking::statusToString(BookingStatus status)
+{
+    switch (status)
+    {
+    case BookingStatus::PENDING:
+        return "PENDING";
+    case BookingStatus::CONFIRMED:
+        return "CONFIRMED";
+    case BookingStatus::CANCELLED:
+        return "CANCELLED";
+    case BookingStatus::COMPLETED:
+        return "COMPLETED";
+    default:
+        return "UNKNOWN";
     }
 }
 
-BookingStatus Booking::stringToStatus(const string &str) {
-    if (str == "PENDING") return BookingStatus::PENDING;
-    if (str == "CONFIRMED") return BookingStatus::CONFIRMED;
-    if (str == "CANCELLED") return BookingStatus::CANCELLED;
-    if (str == "COMPLETED") return BookingStatus::COMPLETED;
+BookingStatus Booking::stringToStatus(const string &str)
+{
+    if (str == "PENDING")
+        return BookingStatus::PENDING;
+    if (str == "CONFIRMED")
+        return BookingStatus::CONFIRMED;
+    if (str == "CANCELLED")
+        return BookingStatus::CANCELLED;
+    if (str == "COMPLETED")
+        return BookingStatus::COMPLETED;
     return BookingStatus::PENDING;
 }

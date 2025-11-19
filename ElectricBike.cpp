@@ -2,7 +2,8 @@
 #include <sstream>
 using namespace std;
 
-ElectricBike::ElectricBike() : Vehicle(), batteryCapacity(0), maxSpeed(0) {
+ElectricBike::ElectricBike() : Vehicle(), batteryCapacity(0), maxSpeed(0)
+{
     type = VehicleType::ELECTRIC_BIKE;
 }
 
@@ -12,31 +13,38 @@ ElectricBike::ElectricBike(const string &id, const string &plate, const string &
     : Vehicle(id, plate, custId, VehicleType::ELECTRIC_BIKE, br, mod, col),
       batteryCapacity(battery), maxSpeed(speed) {}
 
-void ElectricBike::displayInfo() const {
+void ElectricBike::displayInfo() const
+{
     Vehicle::displayInfo();
     cout << "Dung luong pin: " << batteryCapacity << " mAh" << endl;
     cout << "Toc do toi da: " << maxSpeed << " km/h" << endl;
 }
 
-double ElectricBike::calculateParkingFee(long long minutes) const {
+double ElectricBike::calculateParkingFee(long long minutes) const
+{
     const double HOURLY_RATE = 3000.0;
-    if (minutes < 30) minutes = 30;
+    if (minutes < 30)
+        minutes = 30;
     return (minutes / 60.0) * HOURLY_RATE;
 }
 
-string ElectricBike::toFileString() const {
+string ElectricBike::toFileString() const
+{
     ostringstream oss;
     oss << Vehicle::toFileString() << "|" << batteryCapacity << "|" << maxSpeed;
     return oss.str();
 }
 
-void ElectricBike::fromFileString(const string &line) {
+void ElectricBike::fromFileString(const string &line)
+{
     istringstream iss(line);
     string baseData;
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 7; i++)
+    {
         string part;
         getline(iss, part, '|');
-        if (i > 0) baseData += "|";
+        if (i > 0)
+            baseData += "|";
         baseData += part;
     }
     Vehicle::fromFileString(baseData);

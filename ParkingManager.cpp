@@ -1,11 +1,8 @@
 #include "ParkingManager.h"
 #include "Utils.h"
-#include "Exceptions.h"     // THÊM
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
-
-using namespace std;       // THÊM
 
 ParkingManager::ParkingManager() : currentUser(nullptr)
 {
@@ -17,15 +14,12 @@ ParkingManager::~ParkingManager()
     saveAllData();
 }
 
-/* ============================
-        USER MANAGEMENT
-   ============================ */
-
+// ========== User Management ==========
 bool ParkingManager::registerUser(const string &username, const string &password,
                                   const string &fullName, const string &phone,
                                   const string &email, UserRole role)
 {
-    // Check username exists
+    // Check if username already exists
     auto existing = users.find([&](const shared_ptr<User> &u)
                                { return u->getUsername() == username; });
 
@@ -42,14 +36,12 @@ bool ParkingManager::registerUser(const string &username, const string &password
         if (role == UserRole::CUSTOMER)
         {
             newUser = make_shared<Customer>(userId, username, password,
-                                            fullName, phone, email);
+                                                 fullName, phone, email);
         }
         else
         {
-            // Admin mới chỉ còn employeeID, không còn phòng ban + chức vụ
             newUser = make_shared<Admin>(userId, username, password,
-                                         fullName, phone, email,
-                                         "EMP0000"); // bạn có thể sửa lại generate employee code
+                                              fullName, phone, email, "General", "Staff");
         }
 
         users.pushBack(newUser);
@@ -137,10 +129,6 @@ bool ParkingManager::addBalance(const string &customerId, double amount)
     }
 }
 
-/* ============================
-          ADMIN MANAGEMENT
-   ============================ */
-
 Admin *ParkingManager::getAdmin(const string &adminId)
 {
     auto user = users.find([&](const shared_ptr<User> &u)
@@ -159,19 +147,19 @@ DoubleLinkedList<shared_ptr<User>> ParkingManager::getAllAdmins()
                         { return u->getRole() == UserRole::ADMIN; });
 }
 
-/* ============================
-        VEHICLE MANAGEMENT
-   ============================ */
-
+// ========== Vehicle Management ==========
 bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType type,
                                      const string &brand, const string &model,
                                      const string &color, const string &customerId)
 {
+    // Check if license plate already exists
     auto existing = vehicles.find([&](const shared_ptr<Vehicle> &v)
                                   { return v->getLicensePlate() == licensePlate; });
 
     if (existing != nullptr)
+    {
         throw DuplicateException("Bien so xe da ton tai");
+    }
 
     try
     {
@@ -182,19 +170,16 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
         {
         case VehicleType::MOTORCYCLE:
             newVehicle = make_shared<Motorcycle>(vehicleId, licensePlate,
-                                                 customerId, brand, model, color, 150);
+                                                      customerId, brand, model, color, 150);
             break;
-
         case VehicleType::CAR:
             newVehicle = make_shared<Car>(vehicleId, licensePlate,
-                                          customerId, brand, model, color,
-                                          5, false);
+                                               customerId, brand, model, color, 5, false);
             break;
-
         case VehicleType::ELECTRIC_BIKE:
             newVehicle = make_shared<ElectricBike>(vehicleId, licensePlate,
-                                                   customerId, brand, model, color,
-                                                   10000, 45);
+                                                        customerId, brand, model, color,
+                                                        10000, 45);
             break;
         }
 
@@ -224,7 +209,8 @@ shared_ptr<Vehicle> ParkingManager::getVehicleByPlate(const string &plate)
     return vehicle ? *vehicle : nullptr;
 }
 
-DoubleLinkedList<shared_ptr<Vehicle>> ParkingManager::getVehiclesByCustomer(const string &customerId)
+DoubleLinkedList<shared_ptr<Vehicle>> ParkingManager::getVehiclesByCustomer(
+    const string &customerId)
 {
     return vehicles.filter([&](const shared_ptr<Vehicle> &v)
                            { return v->getCustomerId() == customerId; });
@@ -234,701 +220,816 @@ DoubleLinkedList<shared_ptr<Vehicle>> ParkingManager::getAllVehicles()
 {
     return vehicles;
 }
-bool ParkingManager::updateVehicle(const string &vehicleId, const string &brand,
-    const string &model, const string &color)
-{
-auto vehicle = getVehicle(vehicleId);
-if (!vehicle)
-return false;
 
-vehicle->setBrand(brand);
-vehicle->setModel(model);
-vehicle->setColor(color);
-saveVehicles();
-return true;
+bool ParkingManager::updateVehicle(const string &vehicleId, const string &brand,
+                                   const string &model, const string &color)
+{
+    auto vehicle = getVehicle(vehicleId);
+    if (!vehicle)
+        return false;
+
+    vehicle->setBrand(brand);
+    vehicle->setModel(model);
+    vehicle->setColor(color);
+    saveVehicles();
+    return true;
 }
 
 bool ParkingManager::deleteVehicle(const string &vehicleId)
 {
-bool removed = vehicles.remove([&](const shared_ptr<Vehicle> &v)
-    { return v->getVehicleId() == vehicleId; });
+    bool removed = vehicles.remove([&](const shared_ptr<Vehicle> &v)
+                                   { return v->getVehicleId() == vehicleId; });
 
-if (removed)
-saveVehicles();
-
-return removed;
+    if (removed)
+    {
+        saveVehicles();
+    }
+    return removed;
 }
 
-/* ============================
-PARKING SLOT MANAGEMENT
-============================ */
-
+// ========== Parking Slot Management ==========
 bool ParkingManager::addParkingSlot(const string &slotNumber, VehicleType type)
 {
-auto existing = parkingSlots.find([&](const ParkingSlot &s)
-       { return s.getSlotNumber() == slotNumber; });
+    auto existing = parkingSlots.find([&](const ParkingSlot &s)
+                                      { return s.getSlotNumber() == slotNumber; });
 
-if (existing != nullptr)
-throw DuplicateException("So vi tri da ton tai");
+    if (existing != nullptr)
+    {
+        throw DuplicateException("So vi tri da ton tai");
+    }
 
-string slotId = generateSlotId();
-ParkingSlot newSlot(slotId, slotNumber, type);
-
-parkingSlots.pushBack(newSlot);
-saveSlots();
-return true;
+    string slotId = generateSlotId();
+    ParkingSlot newSlot(slotId, slotNumber, type);
+    parkingSlots.pushBack(newSlot);
+    saveSlots();
+    return true;
 }
 
 ParkingSlot *ParkingManager::getParkingSlot(const string &slotId)
 {
-return parkingSlots.find([&](const ParkingSlot &s)
-{ return s.getSlotId() == slotId; });
+    return parkingSlots.find([&](const ParkingSlot &s)
+                             { return s.getSlotId() == slotId; });
 }
 
 ParkingSlot *ParkingManager::getParkingSlotByNumber(const string &slotNumber)
 {
-return parkingSlots.find([&](const ParkingSlot &s)
-{ return s.getSlotNumber() == slotNumber; });
+    return parkingSlots.find([&](const ParkingSlot &s)
+                             { return s.getSlotNumber() == slotNumber; });
 }
 
 DoubleLinkedList<ParkingSlot> ParkingManager::getAvailableSlots(VehicleType type)
 {
-return parkingSlots.filter([&](const ParkingSlot &s)
-{ return s.isAvailable() && s.canAccommodate(type); });
+    return parkingSlots.filter([&](const ParkingSlot &s)
+                               { return s.isAvailable() && s.canAccommodate(type); });
 }
 
 DoubleLinkedList<ParkingSlot> ParkingManager::getAllSlots()
 {
-return parkingSlots;
+    return parkingSlots;
 }
 
 bool ParkingManager::updateSlotStatus(const string &slotId, SlotStatus status)
 {
-ParkingSlot *slot = getParkingSlot(slotId);
-if (!slot)
-return false;
+    ParkingSlot *slot = getParkingSlot(slotId);
+    if (!slot)
+        return false;
 
-try
-{
-if (status == SlotStatus::MAINTENANCE)
-slot->setMaintenance();
-else
-slot->setStatus(status);
-
-saveSlots();
-return true;
-}
-catch (const exception &e)
-{
-throw;
-}
+    try
+    {
+        if (status == SlotStatus::MAINTENANCE)
+        {
+            slot->setMaintenance();
+        }
+        else
+        {
+            slot->setStatus(status);
+        }
+        saveSlots();
+        return true;
+    }
+    catch (const exception &e)
+    {
+        throw;
+    }
 }
 
 bool ParkingManager::deleteParkingSlot(const string &slotId)
 {
-bool removed = parkingSlots.remove([&](const ParkingSlot &s)
-        { return s.getSlotId() == slotId; });
+    bool removed = parkingSlots.remove([&](const ParkingSlot &s)
+                                       { return s.getSlotId() == slotId; });
 
-if (removed)
-saveSlots();
-
-return removed;
+    if (removed)
+    {
+        saveSlots();
+    }
+    return removed;
 }
 
-/* ============================
-BOOKING MANAGEMENT
-============================ */
-
+// ========== Booking Management ==========
 bool ParkingManager::createBooking(const string &customerId, const string &vehicleId,
-    time_t expectedArrival)
+                                   time_t expectedArrival)
 {
-if (!getCustomer(customerId) || !getVehicle(vehicleId))
-throw NotFoundException("Khach hang hoac xe khong ton tai");
+    // Verify customer and vehicle exist
+    if (!getCustomer(customerId) || !getVehicle(vehicleId))
+    {
+        throw NotFoundException("Khach hang hoac xe khong ton tai");
+    }
 
-string bookingId = generateBookingId();
-Booking newBooking(bookingId, customerId, vehicleId, expectedArrival);
+    string bookingId = generateBookingId();
+    Booking newBooking(bookingId, customerId, vehicleId, expectedArrival);
+    newBooking.confirm();
 
-newBooking.confirm();
-bookings.pushBack(newBooking);
-
-saveBookings();
-return true;
+    bookings.pushBack(newBooking);
+    saveBookings();
+    return true;
 }
 
 Booking *ParkingManager::getBooking(const string &bookingId)
 {
-return bookings.find([&](const Booking &b)
-{ return b.getBookingId() == bookingId; });
+    return bookings.find([&](const Booking &b)
+                         { return b.getBookingId() == bookingId; });
 }
 
 DoubleLinkedList<Booking> ParkingManager::getBookingsByCustomer(const string &customerId)
 {
-return bookings.filter([&](const Booking &b)
-{ return b.getCustomerId() == customerId; });
+    return bookings.filter([&](const Booking &b)
+                           { return b.getCustomerId() == customerId; });
 }
 
 DoubleLinkedList<Booking> ParkingManager::getAllBookings()
 {
-return bookings;
+    return bookings;
 }
 
 bool ParkingManager::confirmBooking(const string &bookingId)
 {
-Booking *booking = getBooking(bookingId);
-if (!booking)
-return false;
+    Booking *booking = getBooking(bookingId);
+    if (!booking)
+        return false;
 
-try
-{
-booking->confirm();
-saveBookings();
-return true;
-}
-catch (const exception &e)
-{
-throw;
-}
+    try
+    {
+        booking->confirm();
+        saveBookings();
+        return true;
+    }
+    catch (const exception &e)
+    {
+        throw;
+    }
 }
 
 bool ParkingManager::cancelBooking(const string &bookingId)
 {
-Booking *booking = getBooking(bookingId);
-if (!booking)
-return false;
+    Booking *booking = getBooking(bookingId);
+    if (!booking)
+        return false;
 
-try
-{
-booking->cancel();
-saveBookings();
-return true;
-}
-catch (const exception &e)
-{
-throw;
-}
+    try
+    {
+        booking->cancel();
+        saveBookings();
+        return true;
+    }
+    catch (const exception &e)
+    {
+        throw;
+    }
 }
 
-/* ============================
-TICKET / CHECK-IN / OUT
-============================ */
-
+// ========== Ticket Management ==========
 ParkingSlot *ParkingManager::findAvailableSlot(VehicleType type)
 {
-return parkingSlots.find([&](const ParkingSlot &s)
-{ return s.isAvailable() && s.canAccommodate(type); });
+    return parkingSlots.find([&](const ParkingSlot &s)
+                             { return s.isAvailable() && s.canAccommodate(type); });
 }
 
 string ParkingManager::checkIn(const string &customerId, const string &vehicleId,
-const string &bookingId)
+                                    const string &bookingId)
 {
-Customer *customer = getCustomer(customerId);
-auto vehicle = getVehicle(vehicleId);
+    // Verify customer and vehicle
+    Customer *customer = getCustomer(customerId);
+    auto vehicle = getVehicle(vehicleId);
 
-if (!customer || !vehicle)
-throw NotFoundException("Khach hang hoac xe khong ton tai");
+    if (!customer || !vehicle)
+    {
+        throw NotFoundException("Khach hang hoac xe khong ton tai");
+    }
 
-ParkingSlot *slot = findAvailableSlot(vehicle->getType());
-if (!slot)
-throw NotFoundException("Khong con cho do");
+    // Find available slot
+    ParkingSlot *slot = findAvailableSlot(vehicle->getType());
+    if (!slot)
+    {
+        throw NotFoundException("Khong con cho do");
+    }
 
-string ticketId = generateTicketId();
-ParkingTicket newTicket(ticketId, customerId, vehicleId, slot->getSlotId());
+    // Create ticket
+    string ticketId = generateTicketId();
+    ParkingTicket newTicket(ticketId, customerId, vehicleId, slot->getSlotId());
 
-if (!bookingId.empty())
-{
-Booking *booking = getBooking(bookingId);
-if (booking)
-{
-newTicket.setBookingId(bookingId);
-booking->setTicketId(ticketId);
-booking->complete();
-saveBookings();
-}
-}
+    // If has booking, link it
+    if (!bookingId.empty())
+    {
+        Booking *booking = getBooking(bookingId);
+        if (booking)
+        {
+            newTicket.setBookingId(bookingId);
+            booking->setTicketId(ticketId);
+            booking->complete();
+            saveBookings();
+        }
+    }
 
-slot->occupy(ticketId);
+    // Occupy slot
+    slot->occupy(ticketId);
 
-tickets.pushBack(newTicket);
-saveSlots();
-saveTickets();
+    tickets.pushBack(newTicket);
+    saveSlots();
+    saveTickets();
 
-return ticketId;
+    return ticketId;
 }
 
 bool ParkingManager::checkOut(const string &ticketId)
 {
-ParkingTicket *ticket = getTicket(ticketId);
+    ParkingTicket *ticket = getTicket(ticketId);
+    if (!ticket || !ticket->isActive())
+    {
+        throw NotFoundException("Ticket khong ton tai hoac da thanh toan");
+    }
 
-if (!ticket || !ticket->isActive())
-throw NotFoundException("Ticket khong ton tai hoac da thanh toan");
+    // Get vehicle to calculate fee
+    auto vehicle = getVehicle(ticket->getVehicleId());
+    if (!vehicle)
+    {
+        throw NotFoundException("Khong tim thay thong tin xe");
+    }
 
-auto vehicle = getVehicle(ticket->getVehicleId());
-if (!vehicle)
-throw NotFoundException("Khong tim thay thong tin xe");
+    // Calculate fee
+    long long duration = ticket->getParkingDuration();
+    double fee = vehicle->calculateParkingFee(duration);
 
-long long duration = ticket->getParkingDuration();
-double fee = vehicle->calculateParkingFee(duration);
+    // Get customer and deduct balance
+    Customer *customer = getCustomer(ticket->getCustomerId());
+    if (!customer)
+    {
+        throw NotFoundException("Khong tim thay khach hang");
+    }
 
-Customer *customer = getCustomer(ticket->getCustomerId());
-if (!customer)
-throw NotFoundException("Khong tim thay khach hang");
+    try
+    {
+        customer->deductBalance(fee);
+        customer->addLoyaltyPoints(static_cast<int>(fee / 1000)); // 1 point per 1000 VND
 
-try
-{
-customer->deductBalance(fee);
-customer->addLoyaltyPoints(static_cast<int>(fee / 1000));
+        // Update ticket
+        ticket->checkOut(fee);
 
-ticket->checkOut(fee);
+        // Release slot
+        ParkingSlot *slot = getParkingSlot(ticket->getSlotId());
+        if (slot)
+        {
+            slot->release();
+        }
 
-ParkingSlot *slot = getParkingSlot(ticket->getSlotId());
-if (slot)
-slot->release();
+        saveUsers();
+        saveSlots();
+        saveTickets();
 
-saveUsers();
-saveSlots();
-saveTickets();
-
-return true;
-}
-catch (const exception &e)
-{
-throw;
-}
+        return true;
+    }
+    catch (const exception &e)
+    {
+        throw;
+    }
 }
 
 ParkingTicket *ParkingManager::getTicket(const string &ticketId)
 {
-return tickets.find([&](const ParkingTicket &t)
-{ return t.getTicketId() == ticketId; });
+    return tickets.find([&](const ParkingTicket &t)
+                        { return t.getTicketId() == ticketId; });
 }
 
 DoubleLinkedList<ParkingTicket> ParkingManager::getTicketsByCustomer(const string &customerId)
 {
-return tickets.filter([&](const ParkingTicket &t)
-{ return t.getCustomerId() == customerId; });
+    return tickets.filter([&](const ParkingTicket &t)
+                          { return t.getCustomerId() == customerId; });
 }
 
 DoubleLinkedList<ParkingTicket> ParkingManager::getTicketsByVehicle(const string &vehicleId)
 {
-return tickets.filter([&](const ParkingTicket &t)
-{ return t.getVehicleId() == vehicleId; });
+    return tickets.filter([&](const ParkingTicket &t)
+                          { return t.getVehicleId() == vehicleId; });
 }
 
 DoubleLinkedList<ParkingTicket> ParkingManager::getAllTickets()
 {
-return tickets;
+    return tickets;
 }
 
 DoubleLinkedList<ParkingTicket> ParkingManager::getActiveTickets()
 {
-return tickets.filter([](const ParkingTicket &t)
-{ return t.isActive(); });
+    return tickets.filter([](const ParkingTicket &t)
+                          { return t.isActive(); });
 }
-/* ============================
-             SEARCH
-   ============================ */
 
-   DoubleLinkedList<shared_ptr<User>> ParkingManager::searchUsers(const string &keyword)
-   {
-       string key = Utils::toLower(keyword);
-   
-       return users.filter([&](const shared_ptr<User> &u)
-                           {
-                               return Utils::toLower(u->getFullName()).find(key) != string::npos ||
-                                      Utils::toLower(u->getUsername()).find(key) != string::npos ||
-                                      Utils::toLower(u->getPhoneNumber()).find(key) != string::npos;
-                           });
-   }
-   
-   DoubleLinkedList<shared_ptr<Vehicle>> ParkingManager::searchVehicles(const string &keyword)
-   {
-       string key = Utils::toLower(keyword);
-   
-       return vehicles.filter([&](const shared_ptr<Vehicle> &v)
-                              {
-                                  return Utils::toLower(v->getLicensePlate()).find(key) != string::npos ||
-                                         Utils::toLower(v->getBrand()).find(key) != string::npos ||
-                                         Utils::toLower(v->getModel()).find(key) != string::npos;
-                              });
-   }
-   
-   DoubleLinkedList<ParkingTicket> ParkingManager::searchTickets(const string &keyword)
-   {
-       string key = Utils::toLower(keyword);
-   
-       return tickets.filter([&](const ParkingTicket &t)
-                             {
-                                 return Utils::toLower(t.getTicketId()).find(key) != string::npos ||
-                                        Utils::toLower(t.getVehicleId()).find(key) != string::npos ||
-                                        Utils::toLower(t.getCustomerId()).find(key) != string::npos;
-                             });
-   }
-   
-   /* ============================
-                 SORT
-      ============================ */
-   
-   void ParkingManager::sortUsersByName()
-   {
-       users.sort([](const shared_ptr<User> &a, const shared_ptr<User> &b)
-                  {
-                      return Utils::toLower(a->getFullName()) <
-                             Utils::toLower(b->getFullName());
-                  });
-   }
-   
-   void ParkingManager::sortVehiclesByPlate()
-   {
-       vehicles.sort([](const shared_ptr<Vehicle> &a, const shared_ptr<Vehicle> &b)
-                     {
-                         return Utils::toLower(a->getLicensePlate()) <
-                                Utils::toLower(b->getLicensePlate());
-                     });
-   }
-   
-   void ParkingManager::sortTicketsByTime()
-   {
-       tickets.sort([](const ParkingTicket &a, const ParkingTicket &b)
-                    {
-                        return a.getEntryTime() < b.getEntryTime();
-                    });
-   }
-   
-   /* ============================
-               STATISTICS
-      ============================ */
-   
-   int ParkingManager::getTotalSlots() const
-   {
-       return parkingSlots.size();
-   }
-   
-   int ParkingManager::getAvailableSlotCount(VehicleType type) const
-   {
-       int count = 0;
-   
-       parkingSlots.forEach([&](const ParkingSlot &s)
-                            {
-                                if (s.isAvailable() && s.canAccommodate(type))
-                                    count++;
-                            });
-   
-       return count;
-   }
-   
-   int ParkingManager::getOccupiedSlotCount() const
-   {
-       int count = 0;
-   
-       parkingSlots.forEach([&](const ParkingSlot &s)
-                            {
-                                if (!s.isAvailable())
-                                    count++;
-                            });
-   
-       return count;
-   }
-   
-   double ParkingManager::getTotalRevenue() const
-   {
-       double total = 0;
-   
-       tickets.forEach([&](const ParkingTicket &t)
-                       {
-                           if (!t.isActive())
-                               total += t.getFee();
-                       });
-   
-       return total;
-   }
-   
-   double ParkingManager::getRevenueByPeriod(time_t startTime, time_t endTime) const
-   {
-       double total = 0;
-   
-       tickets.forEach([&](const ParkingTicket &t)
-                       {
-                           if (!t.isActive() &&
-                               t.getExitTime() >= startTime &&
-                               t.getExitTime() <= endTime)
-                           {
-                               total += t.getFee();
-                           }
-                       });
-   
-       return total;
-   }
-   
-   void ParkingManager::generateDailyReport() const
-   {
-       time_t now = time(nullptr);
-       struct tm *timeInfo = localtime(&now);
-   
-       timeInfo->tm_hour = 0;
-       timeInfo->tm_min = 0;
-       timeInfo->tm_sec = 0;
-   
-       time_t startOfDay = mktime(timeInfo);
-       time_t endOfDay = startOfDay + 86400;
-   
-       double revenue = getRevenueByPeriod(startOfDay, endOfDay);
-   
-       cout << "===== BAO CAO NGAY =====" << endl;
-       cout << "Tong doanh thu trong ngay: " << revenue << " VND" << endl;
-   }
-   
-   void ParkingManager::generateMonthlyReport() const
-   {
-       time_t now = time(nullptr);
-       struct tm *timeInfo = localtime(&now);
-   
-       timeInfo->tm_mday = 1;
-       timeInfo->tm_hour = 0;
-       timeInfo->tm_min = 0;
-       timeInfo->tm_sec = 0;
-   
-       time_t startOfMonth = mktime(timeInfo);
-   
-       // Cộng 1 tháng
-       timeInfo->tm_mon += 1;
-       time_t endOfMonth = mktime(timeInfo);
-   
-       double revenue = getRevenueByPeriod(startOfMonth, endOfMonth);
-   
-       cout << "===== BAO CAO THANG =====" << endl;
-       cout << "Tong doanh thu trong thang: " << revenue << " VND" << endl;
-   }
-/* ============================
-            LOAD / SAVE
-   ============================ */
+// ========== Search & Filter ==========
+DoubleLinkedList<shared_ptr<User>> ParkingManager::searchUsers(const string &keyword)
+{
+    string lowerKeyword = Utils::toLower(keyword);
+    return users.filter([&](const shared_ptr<User> &u)
+                        { return Utils::toLower(u->getFullName()).find(lowerKeyword) != string::npos ||
+                                 Utils::toLower(u->getUsername()).find(lowerKeyword) != string::npos ||
+                                 u->getPhoneNumber().find(keyword) != string::npos ||
+                                 Utils::toLower(u->getEmail()).find(lowerKeyword) != string::npos; });
+}
 
-   void ParkingManager::saveAllData()
-   {
-       saveUsers();
-       saveVehicles();
-       saveSlots();
-       saveBookings();
-       saveTickets();
-   }
-   
-   void ParkingManager::loadAllData()
-   {
-       loadUsers();
-       loadVehicles();
-       loadSlots();
-       loadBookings();
-       loadTickets();
-   }
-   
-   /* -------- USERS -------- */
-   
-   void ParkingManager::saveUsers()
-   {
-       ofstream out(USERS_FILE);
-       if (!out)
-           return;
-   
-       users.forEach([&](const shared_ptr<User> &u)
-                     { out << u->toFileString() << endl; });
-   
-       out.close();
-   }
-   
-   void ParkingManager::loadUsers()
-   {
-       ifstream in(USERS_FILE);
-       if (!in)
-           return;
-   
-       string line;
-       while (getline(in, line))
-       {
-           vector<string> parts;
-           string temp;
-           stringstream ss(line);
-   
-           while (getline(ss, temp, '|'))
-               parts.push_back(temp);
-   
-           if (parts.size() < 7)
-               continue;
-   
-           string id = parts[0];
-           string uname = parts[1];
-           string pwd = parts[2];
-           string name = parts[3];
-           string phone = parts[4];
-           string email = parts[5];
-           string role = parts[6];
-   
-           shared_ptr<User> user;
-   
-           if (role == "CUSTOMER")
-           {
-               user = make_shared<Customer>();
-           }
-           else
-           {
-               user = make_shared<Admin>();
-           }
-   
-           user->fromFileString(line);
-           users.pushBack(user);
-       }
-   
-       in.close();
-   }
-   
-   /* -------- VEHICLES -------- */
-   
-   void ParkingManager::saveVehicles()
-   {
-       ofstream out(VEHICLES_FILE);
-       if (!out)
-           return;
-   
-       vehicles.forEach([&](const shared_ptr<Vehicle> &v)
-                        { out << v->toFileString() << endl; });
-   
-       out.close();
-   }
-   
-   void ParkingManager::loadVehicles()
-   {
-       ifstream in(VEHICLES_FILE);
-       if (!in)
-           return;
-   
-       string line;
-       while (getline(in, line))
-       {
-           shared_ptr<Vehicle> v = Vehicle::createFromString(line);
-           if (v)
-               vehicles.pushBack(v);
-       }
-   
-       in.close();
-   }
-   
-   /* -------- SLOTS -------- */
-   
-   void ParkingManager::saveSlots()
-   {
-       ofstream out(SLOTS_FILE);
-       if (!out)
-           return;
-   
-       parkingSlots.forEach([&](const ParkingSlot &s)
-                            { out << s.toFileString() << endl; });
-   
-       out.close();
-   }
-   
-   void ParkingManager::loadSlots()
-   {
-       ifstream in(SLOTS_FILE);
-       if (!in)
-           return;
-   
-       string line;
-       while (getline(in, line))
-       {
-           ParkingSlot slot;
-           slot.fromFileString(line);
-           parkingSlots.pushBack(slot);
-       }
-   
-       in.close();
-   }
-   
-   /* -------- BOOKINGS -------- */
-   
-   void ParkingManager::saveBookings()
-   {
-       ofstream out(BOOKINGS_FILE);
-       if (!out)
-           return;
-   
-       bookings.forEach([&](const Booking &b)
-                        { out << b.toFileString() << endl; });
-   
-       out.close();
-   }
-   
-   void ParkingManager::loadBookings()
-   {
-       ifstream in(BOOKINGS_FILE);
-       if (!in)
-           return;
-   
-       string line;
-       while (getline(in, line))
-       {
-           Booking b;
-           b.fromFileString(line);
-           bookings.pushBack(b);
-       }
-   
-       in.close();
-   }
-   
-   /* -------- TICKETS -------- */
-   
-   void ParkingManager::saveTickets()
-   {
-       ofstream out(TICKETS_FILE);
-       if (!out)
-           return;
-   
-       tickets.forEach([&](const ParkingTicket &t)
-                       { out << t.toFileString() << endl; });
-   
-       out.close();
-   }
-   
-   void ParkingManager::loadTickets()
-   {
-       ifstream in(TICKETS_FILE);
-       if (!in)
-           return;
-   
-       string line;
-       while (getline(in, line))
-       {
-           ParkingTicket t;
-           t.fromFileString(line);
-           tickets.pushBack(t);
-       }
-   
-       in.close();
-   }
-   
-   /* ============================
-             GENERATE ID
-      ============================ */
-   
-   string ParkingManager::generateUserId()
-   {
-       return "USR" + Utils::generateID("");
-   }
-   
-   string ParkingManager::generateVehicleId()
-   {
-       return "VHC" + Utils::generateID("");
-   }
-   
-   string ParkingManager::generateSlotId()
-   {
-       return "SLT" + Utils::generateID("");
-   }
-   
-   string ParkingManager::generateBookingId()
-   {
-       return "BKG" + Utils::generateID("");
-   }
-   
-   string ParkingManager::generateTicketId()
-   {
-       return "TKT" + Utils::generateID("");
-   }
-      
+DoubleLinkedList<shared_ptr<Vehicle>> ParkingManager::searchVehicles(const string &keyword)
+{
+    string lowerKeyword = Utils::toLower(keyword);
+    return vehicles.filter([&](const shared_ptr<Vehicle> &v)
+                           { return Utils::toLower(v->getLicensePlate()).find(lowerKeyword) != string::npos ||
+                                    Utils::toLower(v->getBrand()).find(lowerKeyword) != string::npos ||
+                                    Utils::toLower(v->getModel()).find(lowerKeyword) != string::npos; });
+}
+
+DoubleLinkedList<ParkingTicket> ParkingManager::searchTickets(const string &keyword)
+{
+    string lowerKeyword = Utils::toLower(keyword);
+    return tickets.filter([&](const ParkingTicket &t)
+                          { return t.getTicketId().find(keyword) != string::npos ||
+                                   t.getCustomerId().find(keyword) != string::npos ||
+                                   t.getVehicleId().find(keyword) != string::npos; });
+}
+
+// ========== Sort ==========
+void ParkingManager::sortUsersByName()
+{
+    users.sort([](const shared_ptr<User> &a, const shared_ptr<User> &b)
+               { return a->getFullName() < b->getFullName(); });
+}
+
+void ParkingManager::sortVehiclesByPlate()
+{
+    vehicles.sort([](const shared_ptr<Vehicle> &a, const shared_ptr<Vehicle> &b)
+                  { return a->getLicensePlate() < b->getLicensePlate(); });
+}
+
+void ParkingManager::sortTicketsByTime()
+{
+    tickets.sort([](const ParkingTicket &a, const ParkingTicket &b)
+                 {
+                     return a.getCheckInTime() > b.getCheckInTime(); // Newest first
+                 });
+}
+
+// ========== Statistics & Reports ==========
+int ParkingManager::getTotalSlots() const
+{
+    return parkingSlots.size();
+}
+
+int ParkingManager::getAvailableSlotCount(VehicleType type) const
+{
+    int count = 0;
+    for (auto it = parkingSlots.begin(); it != parkingSlots.end(); ++it)
+    {
+        if (it->isAvailable() && it->canAccommodate(type))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+int ParkingManager::getOccupiedSlotCount() const
+{
+    int count = 0;
+    for (auto it = parkingSlots.begin(); it != parkingSlots.end(); ++it)
+    {
+        if (it->getStatus() == SlotStatus::OCCUPIED)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+double ParkingManager::getTotalRevenue() const
+{
+    double total = 0.0;
+    for (auto it = tickets.begin(); it != tickets.end(); ++it)
+    {
+        if (it->getStatus() == TicketStatus::PAID)
+        {
+            total += it->getFee();
+        }
+    }
+    return total;
+}
+
+double ParkingManager::getRevenueByPeriod(time_t startTime, time_t endTime) const
+{
+    double total = 0.0;
+    for (auto it = tickets.begin(); it != tickets.end(); ++it)
+    {
+        if (it->getStatus() == TicketStatus::PAID &&
+            it->getCheckOutTime() >= startTime &&
+            it->getCheckOutTime() <= endTime)
+        {
+            total += it->getFee();
+        }
+    }
+    return total;
+}
+
+void ParkingManager::generateDailyReport() const
+{
+    cout << "\n========== BAO CAO NGAY " << Utils::getCurrentDateTime() << " ==========\n";
+
+    // Slot statistics
+    cout << "\n1. THONG KE CHO DO:\n";
+    cout << "   - Tong so cho: " << getTotalSlots() << endl;
+    cout << "   - Dang su dung: " << getOccupiedSlotCount() << endl;
+    cout << "   - Con trong (Xe may): " << getAvailableSlotCount(VehicleType::MOTORCYCLE) << endl;
+    cout << "   - Con trong (O to): " << getAvailableSlotCount(VehicleType::CAR) << endl;
+    cout << "   - Con trong (Xe dap dien): " << getAvailableSlotCount(VehicleType::ELECTRIC_BIKE) << endl;
+
+    // Revenue statistics
+    time_t now = time(nullptr);
+    time_t startOfDay = now - (now % 86400); // Start of current day
+    double dailyRevenue = getRevenueByPeriod(startOfDay, now);
+
+    cout << "\n2. DOANH THU:\n";
+    cout << "   - Doanh thu hom nay: " << fixed << setprecision(2)
+              << dailyRevenue << " VND" << endl;
+    cout << "   - Tong doanh thu: " << getTotalRevenue() << " VND" << endl;
+
+    // Active tickets
+    int activeCount = 0;
+    for (auto it = tickets.begin(); it != tickets.end(); ++it)
+    {
+        if (it->isActive())
+            activeCount++;
+    }
+
+    cout << "\n3. VE HIEN TAI:\n";
+    cout << "   - So ve dang hoat dong: " << activeCount << endl;
+    cout << "   - Tong so ve da tao: " << tickets.size() << endl;
+
+    cout << "\n=======================================================\n";
+}
+
+void ParkingManager::generateMonthlyReport() const
+{
+    cout << "\n========== BAO CAO THANG ==========\n";
+
+    time_t now = time(nullptr);
+    struct tm *timeinfo = localtime(&now);
+    timeinfo->tm_mday = 1;
+    timeinfo->tm_hour = 0;
+    timeinfo->tm_min = 0;
+    timeinfo->tm_sec = 0;
+    time_t startOfMonth = mktime(timeinfo);
+
+    double monthlyRevenue = getRevenueByPeriod(startOfMonth, now);
+
+    cout << "Doanh thu thang nay: " << fixed << setprecision(2)
+              << monthlyRevenue << " VND" << endl;
+
+    // Count tickets by type
+    int motorcycleTickets = 0, carTickets = 0, electricBikeTickets = 0;
+
+    for (auto it = tickets.begin(); it != tickets.end(); ++it)
+    {
+        if (it->getCheckInTime() >= startOfMonth)
+        {
+            auto vehicle = const_cast<ParkingManager *>(this)->getVehicle(it->getVehicleId());
+            if (vehicle)
+            {
+                switch (vehicle->getType())
+                {
+                case VehicleType::MOTORCYCLE:
+                    motorcycleTickets++;
+                    break;
+                case VehicleType::CAR:
+                    carTickets++;
+                    break;
+                case VehicleType::ELECTRIC_BIKE:
+                    electricBikeTickets++;
+                    break;
+                }
+            }
+        }
+    }
+
+    cout << "\nThong ke theo loai xe:\n";
+    cout << "   - Xe may: " << motorcycleTickets << " luot\n";
+    cout << "   - O to: " << carTickets << " luot\n";
+    cout << "   - Xe dap dien: " << electricBikeTickets << " luot\n";
+
+    cout << "\n====================================\n";
+}
+
+// ========== File Operations ==========
+void ParkingManager::saveAllData()
+{
+    saveUsers();
+    saveVehicles();
+    saveSlots();
+    saveBookings();
+    saveTickets();
+}
+
+void ParkingManager::loadAllData()
+{
+    loadUsers();
+    loadVehicles();
+    loadSlots();
+    loadBookings();
+    loadTickets();
+}
+
+void ParkingManager::loadUsers()
+{
+    ifstream file(USERS_FILE);
+    if (!file.is_open())
+        return;
+
+    string line;
+    while (getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        try
+        {
+            istringstream iss(line);
+            string roleStr;
+
+            // Read first 7 fields to determine role
+            vector<string> fields;
+            string field;
+            while (getline(iss, field, '|'))
+            {
+                fields.push_back(field);
+                if (fields.size() == 7)
+                    break;
+            }
+
+            if (fields.size() < 7)
+                continue;
+
+            shared_ptr<User> user;
+            if (fields[6] == "CUSTOMER")
+            {
+                user = make_shared<Customer>();
+            }
+            else
+            {
+                user = make_shared<Admin>();
+            }
+
+            user->fromFileString(line);
+            users.pushBack(user);
+        }
+        catch (const exception &e)
+        {
+            cerr << "Loi khi doc user: " << e.what() << endl;
+        }
+    }
+    file.close();
+}
+
+void ParkingManager::saveUsers()
+{
+    ofstream file(USERS_FILE);
+    if (!file.is_open())
+    {
+        throw runtime_error("Khong the mo file users.txt");
+    }
+
+    for (auto it = users.begin(); it != users.end(); ++it)
+    {
+        file << (*it)->toFileString() << endl;
+    }
+    file.close();
+}
+
+void ParkingManager::loadVehicles()
+{
+    ifstream file(VEHICLES_FILE);
+    if (!file.is_open())
+        return;
+
+    string line;
+    while (getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        try
+        {
+            istringstream iss(line);
+            vector<string> fields;
+            string field;
+
+            while (getline(iss, field, '|'))
+            {
+                fields.push_back(field);
+                if (fields.size() == 4)
+                    break;
+            }
+
+            if (fields.size() < 4)
+                continue;
+
+            VehicleType type = Vehicle::stringToVehicleType(fields[3]);
+            shared_ptr<Vehicle> vehicle;
+
+            switch (type)
+            {
+            case VehicleType::MOTORCYCLE:
+                vehicle = make_shared<Motorcycle>();
+                break;
+            case VehicleType::CAR:
+                vehicle = make_shared<Car>();
+                break;
+            case VehicleType::ELECTRIC_BIKE:
+                vehicle = make_shared<ElectricBike>();
+                break;
+            }
+
+            vehicle->fromFileString(line);
+            vehicles.pushBack(vehicle);
+        }
+        catch (const exception &e)
+        {
+            cerr << "Loi khi doc vehicle: " << e.what() << endl;
+        }
+    }
+    file.close();
+}
+
+void ParkingManager::saveVehicles()
+{
+    ofstream file(VEHICLES_FILE);
+    if (!file.is_open())
+    {
+        throw runtime_error("Khong the mo file vehicles.txt");
+    }
+
+    for (auto it = vehicles.begin(); it != vehicles.end(); ++it)
+    {
+        file << (*it)->toFileString() << endl;
+    }
+    file.close();
+}
+
+void ParkingManager::loadSlots()
+{
+    ifstream file(SLOTS_FILE);
+    if (!file.is_open())
+        return;
+
+    string line;
+    while (getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        try
+        {
+            ParkingSlot slot;
+            slot.fromFileString(line);
+            parkingSlots.pushBack(slot);
+        }
+        catch (const exception &e)
+        {
+            cerr << "Loi khi doc slot: " << e.what() << endl;
+        }
+    }
+    file.close();
+}
+
+void ParkingManager::saveSlots()
+{
+    ofstream file(SLOTS_FILE);
+    if (!file.is_open())
+    {
+        throw runtime_error("Khong the mo file slots.txt");
+    }
+
+    for (auto it = parkingSlots.begin(); it != parkingSlots.end(); ++it)
+    {
+        file << it->toFileString() << endl;
+    }
+    file.close();
+}
+
+void ParkingManager::loadBookings()
+{
+    ifstream file(BOOKINGS_FILE);
+    if (!file.is_open())
+        return;
+
+    string line;
+    while (getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        try
+        {
+            Booking booking;
+            booking.fromFileString(line);
+            bookings.pushBack(booking);
+        }
+        catch (const exception &e)
+        {
+            cerr << "Loi khi doc booking: " << e.what() << endl;
+        }
+    }
+    file.close();
+}
+
+void ParkingManager::saveBookings()
+{
+    ofstream file(BOOKINGS_FILE);
+    if (!file.is_open())
+    {
+        throw runtime_error("Khong the mo file bookings.txt");
+    }
+
+    for (auto it = bookings.begin(); it != bookings.end(); ++it)
+    {
+        file << it->toFileString() << endl;
+    }
+    file.close();
+}
+
+void ParkingManager::loadTickets()
+{
+    ifstream file(TICKETS_FILE);
+    if (!file.is_open())
+        return;
+
+    string line;
+    while (getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        try
+        {
+            ParkingTicket ticket;
+            ticket.fromFileString(line);
+            tickets.pushBack(ticket);
+        }
+        catch (const exception &e)
+        {
+            cerr << "Loi khi doc ticket: " << e.what() << endl;
+        }
+    }
+    file.close();
+}
+
+void ParkingManager::saveTickets()
+{
+    ofstream file(TICKETS_FILE);
+    if (!file.is_open())
+    {
+        throw runtime_error("Khong the mo file tickets.txt");
+    }
+
+    for (auto it = tickets.begin(); it != tickets.end(); ++it)
+    {
+        file << it->toFileString() << endl;
+    }
+    file.close();
+}
+
+// ========== Helper Functions ==========
+string ParkingManager::generateUserId()
+{
+    return Utils::generateID("U");
+}
+
+string ParkingManager::generateVehicleId()
+{
+    return Utils::generateID("V");
+}
+
+string ParkingManager::generateSlotId()
+{
+    return Utils::generateID("S");
+}
+
+string ParkingManager::generateBookingId()
+{
+    return Utils::generateID("B");
+}
+
+string ParkingManager::generateTicketId()
+{
+    return Utils::generateID("T");
+}

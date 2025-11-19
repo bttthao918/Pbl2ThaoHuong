@@ -6,13 +6,15 @@
 #include <iostream>
 using namespace std;
 
-enum class TicketStatus {
+enum class TicketStatus
+{
     ACTIVE,
     PAID,
     CANCELLED
 };
 
-class ParkingTicket {
+class ParkingTicket
+{
 private:
     string ticketId;
     string customerId;

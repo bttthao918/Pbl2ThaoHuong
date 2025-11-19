@@ -190,6 +190,11 @@ public:
         return false;
     }
 
+    void forEach(std::function<void(const T &)> action) const
+    {
+        for_each(action);
+    }
+
     // Filter elements
     DoubleLinkedList<T> filter(std::function<bool(const T &)> predicate) const
     {

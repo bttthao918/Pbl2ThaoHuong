@@ -37,7 +37,8 @@ void Admin::fromFileString(const string &line)
     {
         string part;
         getline(iss, part, '|');
-        if (i > 0) baseData += "|";
+        if (i > 0)
+            baseData += "|";
         baseData += part;
     }
 

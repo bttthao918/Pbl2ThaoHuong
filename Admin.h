@@ -8,7 +8,7 @@ using namespace std;
 class Admin : public User
 {
 private:
-    string employeeID;   // Mã nhân viên
+    string employeeID; // Mã nhân viên
 
 public:
     Admin();

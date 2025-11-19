@@ -75,3 +75,4 @@ VehicleType Vehicle::stringToVehicleType(const string &str) {
     if (str == "CAR") return VehicleType::CAR;
     if (str == "ELECTRIC_BIKE") return VehicleType::ELECTRIC_BIKE;
     return VehicleType::MOTORCYCLE;
+}

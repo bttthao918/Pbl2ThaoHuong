@@ -6,14 +6,16 @@
 #include <iostream>
 using namespace std;
 
-enum class BookingStatus {
+enum class BookingStatus
+{
     PENDING,
     CONFIRMED,
     CANCELLED,
     COMPLETED
 };
 
-class Booking {
+class Booking
+{
 private:
     string bookingId;
     string customerId;
