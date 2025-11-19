@@ -1,37 +1,30 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
+#include <stdexcept>
 #include <string>
-#include <exception>
 
-class ParkingException : public std::exception {
-private:
-    std::string message;
+using namespace std;
+
+class InvalidInputException : public runtime_error
+{
 public:
-    ParkingException(const std::string& msg) : message(msg) {}
-    const char* what() const noexcept override {
-        return message.c_str();
-    }
+    explicit InvalidInputException(const string &msg)
+        : runtime_error(msg) {}
 };
 
-class NotFoundException : public ParkingException {
+class NotFoundException : public runtime_error
+{
 public:
-    NotFoundException(const std::string& msg) : ParkingException(msg) {}
+    explicit NotFoundException(const string &msg)
+        : runtime_error(msg) {}
 };
 
-class DuplicateException : public ParkingException {
+class DuplicateException : public runtime_error
+{
 public:
-    DuplicateException(const std::string& msg) : ParkingException(msg) {}
-};
-
-class FullCapacityException : public ParkingException {
-public:
-    FullCapacityException(const std::string& msg) : ParkingException(msg) {}
-};
-
-class InvalidDataException : public ParkingException {
-public:
-    InvalidDataException(const std::string& msg) : ParkingException(msg) {}
+    explicit DuplicateException(const string &msg)
+        : runtime_error(msg) {}
 };
 
 #endif
