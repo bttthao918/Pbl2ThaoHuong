@@ -1,93 +1,161 @@
-// ...existing code...
-#ifndef DOUBLELINKEDLIST_H
-#define DOUBLELINKEDLIST_H
+#ifndef DOUBLE_LINKED_LIST_H
+#define DOUBLE_LINKED_LIST_H
 
 #include <iostream>
 #include <functional>
-#include "Exception.h"
+#include <stdexcept>
 
 template <typename T>
-class Node {
-public:
-    T data;
-    Node* next;
-    Node* prev;
-    
-    Node(const T& value) : data(value), next(nullptr), prev(nullptr) {}
-};
-
-template <typename T>
-class DoubleLinkedList {
+class DoubleLinkedList
+{
 private:
-    Node<T>* head;
-    Node<T>* tail;
-    int size;
+    struct Node
+    {
+        T data;
+        Node *prev;
+        Node *next;
+
+        Node(const T &value) : data(value), prev(nullptr), next(nullptr) {}
+    };
+
+    Node *head;
+    Node *tail;
+    int count;
 
 public:
-    DoubleLinkedList() : head(nullptr), tail(nullptr), size(0) {}
-    
-    ~DoubleLinkedList() {
+    // Constructor
+    DoubleLinkedList() : head(nullptr), tail(nullptr), count(0) {}
+
+    // Destructor
+    ~DoubleLinkedList()
+    {
         clear();
     }
 
-    // Thêm phần tử vào cuối
-    void push_back(const T& value) {
-        Node<T>* newNode = new Node<T>(value);
-        if (!head) {
-            head = tail = newNode;
-        } else {
-            tail->next = newNode;
-            newNode->prev = tail;
-            tail = newNode;
+    // Copy constructor
+    DoubleLinkedList(const DoubleLinkedList &other) : head(nullptr), tail(nullptr), count(0)
+    {
+        Node *current = other.head;
+        while (current)
+        {
+            pushBack(current->data);
+            current = current->next;
         }
-        size++;
     }
 
-    // Thêm phần tử vào đầu
-    void push_front(const T& value) {
-        Node<T>* newNode = new Node<T>(value);
-        if (!head) {
+    // Assignment operator
+    DoubleLinkedList &operator=(const DoubleLinkedList &other)
+    {
+        if (this != &other)
+        {
+            clear();
+            Node *current = other.head;
+            while (current)
+            {
+                pushBack(current->data);
+                current = current->next;
+            }
+        }
+        return *this;
+    }
+
+    // Add element to front
+    void pushFront(const T &value)
+    {
+        Node *newNode = new Node(value);
+        if (!head)
+        {
             head = tail = newNode;
-        } else {
+        }
+        else
+        {
             newNode->next = head;
             head->prev = newNode;
             head = newNode;
         }
-        size++;
+        count++;
     }
 
-    // Xóa phần tử theo điều kiện
-    bool remove_if(std::function<bool(const T&)> predicate) {
-        Node<T>* current = head;
-        while (current) {
-            if (predicate(current->data)) {
-                Node<T>* toDelete = current;
-                if (current == head) {
-                    head = current->next;
-                    if (head) head->prev = nullptr;
-                    else tail = nullptr;
-                } else if (current == tail) {
-                    tail = current->prev;
-                    tail->next = nullptr;
-                } else {
-                    current->prev->next = current->next;
-                    current->next->prev = current->prev;
-                }
-                current = current->next;
-                delete toDelete;
-                size--;
-                return true;
-            }
-            current = current->next;
+    // Add element to back
+    void pushBack(const T &value)
+    {
+        Node *newNode = new Node(value);
+        if (!tail)
+        {
+            head = tail = newNode;
         }
-        return false;
+        else
+        {
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+        count++;
     }
 
-    // Tìm phần tử theo điều kiện
-    T* find_if(std::function<bool(const T&)> predicate) {
-        Node<T>* current = head;
-        while (current) {
-            if (predicate(current->data)) {
+    // Remove element from front
+    void popFront()
+    {
+        if (!head)
+            throw std::runtime_error("List is empty");
+        Node *temp = head;
+        head = head->next;
+        if (head)
+            head->prev = nullptr;
+        else
+            tail = nullptr;
+        delete temp;
+        count--;
+    }
+
+    // Remove element from back
+    void popBack()
+    {
+        if (!tail)
+            throw std::runtime_error("List is empty");
+        Node *temp = tail;
+        tail = tail->prev;
+        if (tail)
+            tail->next = nullptr;
+        else
+            head = nullptr;
+        delete temp;
+        count--;
+    }
+
+    // Get size
+    int size() const
+    {
+        return count;
+    }
+
+    // Check if empty
+    bool empty() const
+    {
+        return count == 0;
+    }
+
+    // Clear all elements
+    void clear()
+    {
+        while (head)
+        {
+            Node *temp = head;
+            head = head->next;
+            delete temp;
+        }
+        tail = nullptr;
+        count = 0;
+    }
+
+    // Find element by condition
+    T *find(std::function<bool(const T &)> predicate)
+    {
+        Node *current = head;
+        while (current)
+        {
+            if (predicate(current->data))
+            {
                 return &(current->data);
             }
             current = current->next;
@@ -95,82 +163,198 @@ public:
         return nullptr;
     }
 
-    // Cập nhật phần tử
-    bool update_if(std::function<bool(const T&)> predicate, const T& newValue) {
-        T* found = find_if(predicate);
-        if (found) {
-            *found = newValue;
-            return true;
+    // Remove element by condition
+    bool remove(std::function<bool(const T &)> predicate)
+    {
+        Node *current = head;
+        while (current)
+        {
+            if (predicate(current->data))
+            {
+                if (current->prev)
+                    current->prev->next = current->next;
+                else
+                    head = current->next;
+
+                if (current->next)
+                    current->next->prev = current->prev;
+                else
+                    tail = current->prev;
+
+                delete current;
+                count--;
+                return true;
+            }
+            current = current->next;
         }
         return false;
     }
 
-    // Duyệt qua tất cả phần tử
-    void for_each(std::function<void(T&)> action) {
-        Node<T>* current = head;
-        while (current) {
-            action(current->data);
-            current = current->next;
-        }
-    }
-
-    // Lấy kích thước
-    int get_size() const {
-        return size;
-    }
-
-    // Kiểm tra rỗng
-    bool is_empty() const {
-        return size == 0;
-    }
-
-    // Xóa tất cả
-    void clear() {
-        while (head) {
-            Node<T>* temp = head;
-            head = head->next;
-            delete temp;
-        }
-        tail = nullptr;
-        size = 0;
-    }
-
-    // Lọc và trả về danh sách mới
-    DoubleLinkedList<T> filter(std::function<bool(const T&)> predicate) {
+    // Filter elements
+    DoubleLinkedList<T> filter(std::function<bool(const T &)> predicate) const
+    {
         DoubleLinkedList<T> result;
-        Node<T>* current = head;
-        while (current) {
-            if (predicate(current->data)) {
-                result.push_back(current->data);
+        Node *current = head;
+        while (current)
+        {
+            if (predicate(current->data))
+            {
+                result.pushBack(current->data);
             }
             current = current->next;
         }
         return result;
     }
 
-    // Iterator để duyệt danh sách
-    class Iterator {
+    // Sort using merge sort (stable, O(n log n))
+    void sort(std::function<bool(const T &, const T &)> compare)
+    {
+        if (count <= 1)
+            return;
+        head = mergeSort(head, compare);
+
+        // Update tail
+        tail = head;
+        while (tail->next)
+        {
+            tail = tail->next;
+        }
+    }
+
+    // Iterator support
+    class Iterator
+    {
     private:
-        Node<T>* current;
+        Node *current;
+
     public:
-        Iterator(Node<T>* node) : current(node) {}
-        
-        T& operator*() { return current->data; }
-        Iterator& operator++() { current = current->next; return *this; }
-        bool operator!=(const Iterator& other) { return current != other.current; }
+        Iterator(Node *node) : current(node) {}
+
+        T &operator*() { return current->data; }
+        T *operator->() { return &(current->data); }
+
+        Iterator &operator++()
+        {
+            if (current)
+                current = current->next;
+            return *this;
+        }
+
+        Iterator operator++(int)
+        {
+            Iterator temp = *this;
+            ++(*this);
+            return temp;
+        }
+
+        bool operator==(const Iterator &other) const
+        {
+            return current == other.current;
+        }
+
+        bool operator!=(const Iterator &other) const
+        {
+            return current != other.current;
+        }
     };
 
     Iterator begin() { return Iterator(head); }
     Iterator end() { return Iterator(nullptr); }
 
-    // --- bổ sung: truy cập head/tail và một vài alias tiện dụng ---
-    Node<T>* getHead() const { return head; }
-    Node<T>* getTail() const { return tail; }
+    // Const iterator
+    class ConstIterator
+    {
+    private:
+        const Node *current;
 
-    // alias tương thích với code cũ
-    void pushBack(const T& value) { push_back(value); }
-    int getSize() const { return get_size(); }
-    bool isEmpty() const { return is_empty(); }
+    public:
+        ConstIterator(const Node *node) : current(node) {}
+
+        const T &operator*() const { return current->data; }
+        const T *operator->() const { return &(current->data); }
+
+        ConstIterator &operator++()
+        {
+            if (current)
+                current = current->next;
+            return *this;
+        }
+
+        bool operator==(const ConstIterator &other) const
+        {
+            return current == other.current;
+        }
+
+        bool operator!=(const ConstIterator &other) const
+        {
+            return current != other.current;
+        }
+    };
+
+    ConstIterator begin() const { return ConstIterator(head); }
+    ConstIterator end() const { return ConstIterator(nullptr); }
+
+private:
+    // Merge sort helper functions
+    Node *mergeSort(Node *h, std::function<bool(const T &, const T &)> compare)
+    {
+        if (!h || !h->next)
+            return h;
+
+        Node *middle = getMiddle(h);
+        Node *nextOfMiddle = middle->next;
+
+        middle->next = nullptr;
+        if (nextOfMiddle)
+            nextOfMiddle->prev = nullptr;
+
+        Node *left = mergeSort(h, compare);
+        Node *right = mergeSort(nextOfMiddle, compare);
+
+        return merge(left, right, compare);
+    }
+
+    Node *getMiddle(Node *h)
+    {
+        if (!h)
+            return h;
+        Node *slow = h;
+        Node *fast = h->next;
+
+        while (fast && fast->next)
+        {
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+        return slow;
+    }
+
+    Node *merge(Node *left, Node *right, std::function<bool(const T &, const T &)> compare)
+    {
+        if (!left)
+            return right;
+        if (!right)
+            return left;
+
+        Node *result = nullptr;
+
+        if (compare(left->data, right->data))
+        {
+            result = left;
+            result->next = merge(left->next, right, compare);
+            if (result->next)
+                result->next->prev = result;
+        }
+        else
+        {
+            result = right;
+            result->next = merge(left, right->next, compare);
+            if (result->next)
+                result->next->prev = result;
+        }
+
+        return result;
+    }
 };
 
 #endif
