@@ -7,13 +7,11 @@
             "command": "g++",
             "args": [
                 "-std=c++17",
-                "-I",
-                "include",
-                "src/*.cpp",
+                "*.cpp",
                 "-o",
                 "main.exe",
                 "&&",
-                "./main.exe"
+                "main.exe"
             ],
             "group": {
                 "kind": "build",
