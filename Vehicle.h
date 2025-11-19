@@ -2,29 +2,59 @@
 #define VEHICLE_H
 
 #include <string>
-#include "RateManager.h"
+#include <iostream>
 using namespace std;
 
-class Vehicle {
+enum class VehicleType
+{
+    MOTORCYCLE,
+    CAR,
+    ELECTRIC_BIKE
+};
+
+class Vehicle
+{
 protected:
-    string vehicleID;
-    string ownerName;
-    string phoneNumber;
-    string entryTime;
-    string exitTime;
-    string parkingSlotID;
-    string ticketID;
+    string vehicleId;
+    string licensePlate;
+    string customerId;
+    VehicleType type;
+    string brand;
+    string model;
+    string color;
 
 public:
-    Vehicle(string id = "", string owner = "", string phone = "",
-            string entry = "", string slot = "", string ticket = "");
-
+    Vehicle();
+    Vehicle(const string &id, const string &plate, const string &custId,
+            VehicleType t, const string &br, const string &mod, const string &col);
     virtual ~Vehicle() {}
 
-    void setExitTime(string exit);
+    // Getters & Setters
+    string getVehicleId() const;
+    string getLicensePlate() const;
+    string getCustomerId() const;
+    VehicleType getType() const;
+    string getBrand() const;
+    string getModel() const;
+    string getColor() const;
 
-    virtual void display() const = 0;
-    virtual double calculateParkingFee(const RateManager& rateManager) const = 0;
+    void setLicensePlate(const string &plate);
+    void setBrand(const string &br);
+    void setModel(const string &mod);
+    void setColor(const string &col);
+
+    // Virtual methods
+    virtual void displayInfo() const;
+    virtual double calculateParkingFee(long long minutes) const = 0;
+    virtual string getTypeString() const = 0;
+    virtual string toFileString() const;
+    virtual void fromFileString(const string &line);
+
+    friend ostream &operator<<(ostream &os, const Vehicle &vehicle);
+    bool operator==(const Vehicle &other) const;
+
+    static string vehicleTypeToString(VehicleType type);
+    static VehicleType stringToVehicleType(const string &str);
 };
 
 #endif

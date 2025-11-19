@@ -2,19 +2,26 @@
 #define MOTORCYCLE_H
 
 #include "Vehicle.h"
-#include "RateManager.h"
+using namespace std;
 
-class Motorcycle : public Vehicle {
+class Motorcycle : public Vehicle
+{
 private:
     int engineCapacity;
-    bool hasHelmet;
 
 public:
-    Motorcycle(string id, string owner, string phone, string entry,
-               string slot, string ticket, int capacity, bool helmet);
+    Motorcycle();
+    Motorcycle(const string &id, const string &plate, const string &custId,
+               const string &br, const string &mod, const string &col, int capacity);
 
-    void display() const override;
-   double calculateParkingFee(const RateManager& rateManager) const;
+    int getEngineCapacity() const;
+    void setEngineCapacity(int capacity);
+
+    void displayInfo() const override;
+    double calculateParkingFee(long long minutes) const override;
+    string getTypeString() const override;
+    string toFileString() const override;
+    void fromFileString(const string &line) override;
 };
 
 #endif

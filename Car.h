@@ -2,18 +2,30 @@
 #define CAR_H
 
 #include "Vehicle.h"
+using namespace std;
 
-class Car : public Vehicle {
+class Car : public Vehicle
+{
 private:
-    string licensePlateType;
-    int numberOfSeats;
+    int seatCount;
+    bool isLuxury;
 
 public:
-    Car(string id, string owner, string phone, string entry,
-        string slot, string ticket, string plateType, int seats);
+    Car();
+    Car(const string &id, const string &plate, const string &custId,
+        const string &br, const string &mod, const string &col,
+        int seats, bool luxury);
 
-    void display() const override;
-    double calculateParkingFee(const RateManager& rateManager) const;
+    int getSeatCount() const;
+    bool getIsLuxury() const;
+    void setSeatCount(int seats);
+    void setIsLuxury(bool luxury);
+
+    void displayInfo() const override;
+    double calculateParkingFee(long long minutes) const override;
+    string getTypeString() const override;
+    string toFileString() const override;
+    void fromFileString(const string &line) override;
 };
 
 #endif

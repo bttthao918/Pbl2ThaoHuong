@@ -1,46 +1,132 @@
 #include "ParkingSlot.h"
-#include <iostream>
-using namespace std;
+#include "Utils.h"
+#include <sstream>
 
-// Default constructor
-ParkingSlot::ParkingSlot()
-    : slotNumber(0), slotID(""), zone(""), floor(0), vehicleType(""),
-      occupied(false), currentVehicleID("") {}
+ParkingSlot::ParkingSlot() : status(SlotStatus::AVAILABLE),
+                             suitableFor(VehicleType::MOTORCYCLE) {}
 
-// Param constructor
-ParkingSlot::ParkingSlot(int slotNumber, string zone, int floor, string vType)
-    : slotNumber(slotNumber), slotID(""), zone(zone), floor(floor),
-      vehicleType(vType), occupied(false), currentVehicleID("") {}
+ParkingSlot::ParkingSlot(const std::string &id, const std::string &number, VehicleType type)
+    : slotId(id), slotNumber(number), suitableFor(type),
+      status(SlotStatus::AVAILABLE), currentTicketId("") {}
 
-
-
-// Chiếm chỗ (biển số + cập nhật loại xe)
-void ParkingSlot::occupy(const string& vehicleID, const string& vehicleType)
+bool ParkingSlot::canAccommodate(VehicleType type) const
 {
-    if (occupied) {
-        cout << ">>> Lỗi: Chỗ " << slotNumber << " đang có xe!\n";
-        return;
+    // Xe ô tô chỉ vào chỗ ô tô
+    // Xe máy và xe đạp điện có thể vào cả chỗ xe máy và xe đạp điện
+    if (type == VehicleType::CAR)
+    {
+        return suitableFor == VehicleType::CAR;
     }
-    occupied = true;
-    currentVehicleID = vehicleID;
-    this->vehicleType = vehicleType;
+    return suitableFor != VehicleType::CAR;
 }
 
-// Giải phóng chỗ
+void ParkingSlot::occupy(const std::string &ticketId)
+{
+    if (status != SlotStatus::AVAILABLE && status != SlotStatus::RESERVED)
+    {
+        throw InvalidInputException("Cho do khong kha dung");
+    }
+    status = SlotStatus::OCCUPIED;
+    currentTicketId = ticketId;
+}
+
 void ParkingSlot::release()
 {
-    occupied = false;
-    currentVehicleID = "";
+    status = SlotStatus::AVAILABLE;
+    currentTicketId = "";
 }
 
-// Hiển thị thông tin
-void ParkingSlot::display() const
+void ParkingSlot::reserve()
 {
-    cout << "Slot #" << slotNumber;
-    if (!slotID.empty()) cout << " (" << slotID << ")";
-    cout << "  | Zone: " << zone << " | Floor: " << floor
-         << " | Type: " << vehicleType
-         << " | Occupied: " << (occupied ? "Yes" : "No");
-    if (occupied) cout << " | Vehicle: " << currentVehicleID;
-    cout << endl;
+    if (status != SlotStatus::AVAILABLE)
+    {
+        throw InvalidInputException("Cho do khong the dat truoc");
+    }
+    status = SlotStatus::RESERVED;
+}
+
+void ParkingSlot::setMaintenance()
+{
+    if (status == SlotStatus::OCCUPIED)
+    {
+        throw InvalidInputException("Khong the bao tri khi dang co xe");
+    }
+    status = SlotStatus::MAINTENANCE;
+    currentTicketId = "";
+}
+
+void ParkingSlot::displayInfo() const
+{
+    std::cout << "Slot ID: " << slotId << std::endl;
+    std::cout << "So vi tri: " << slotNumber << std::endl;
+    std::cout << "Loai xe: " << Vehicle::vehicleTypeToString(suitableFor) << std::endl;
+    std::cout << "Trang thai: " << statusToString(status) << std::endl;
+    if (!currentTicketId.empty())
+    {
+        std::cout << "Ticket hien tai: " << currentTicketId << std::endl;
+    }
+}
+
+std::string ParkingSlot::toFileString() const
+{
+    std::ostringstream oss;
+    oss << slotId << "|" << slotNumber << "|"
+        << Vehicle::vehicleTypeToString(suitableFor) << "|"
+        << statusToString(status) << "|" << currentTicketId;
+    return oss.str();
+}
+
+void ParkingSlot::fromFileString(const std::string &line)
+{
+    std::istringstream iss(line);
+    std::string typeStr, statusStr;
+
+    std::getline(iss, slotId, '|');
+    std::getline(iss, slotNumber, '|');
+    std::getline(iss, typeStr, '|');
+    suitableFor = Vehicle::stringToVehicleType(typeStr);
+    std::getline(iss, statusStr, '|');
+    status = stringToStatus(statusStr);
+    std::getline(iss, currentTicketId);
+}
+
+std::ostream &operator<<(std::ostream &os, const ParkingSlot &slot)
+{
+    os << "Slot " << slot.slotNumber << " (" << slot.statusToString(slot.status) << ")";
+    return os;
+}
+
+bool ParkingSlot::operator==(const ParkingSlot &other) const
+{
+    return slotId == other.slotId;
+}
+
+std::string ParkingSlot::statusToString(SlotStatus status)
+{
+    switch (status)
+    {
+    case SlotStatus::AVAILABLE:
+        return "AVAILABLE";
+    case SlotStatus::OCCUPIED:
+        return "OCCUPIED";
+    case SlotStatus::RESERVED:
+        return "RESERVED";
+    case SlotStatus::MAINTENANCE:
+        return "MAINTENANCE";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+SlotStatus ParkingSlot::stringToStatus(const std::string &str)
+{
+    if (str == "AVAILABLE")
+        return SlotStatus::AVAILABLE;
+    if (str == "OCCUPIED")
+        return SlotStatus::OCCUPIED;
+    if (str == "RESERVED")
+        return SlotStatus::RESERVED;
+    if (str == "MAINTENANCE")
+        return SlotStatus::MAINTENANCE;
+    return SlotStatus::AVAILABLE;
 }

@@ -1,68 +1,46 @@
 #include "ElectricBike.h"
-#include <iostream>
-#include <ctime>
-#include <cmath>
 #include <sstream>
-#include <iomanip>
 using namespace std;
 
-ElectricBike::ElectricBike(string id, string owner, string phone,
-                           string entry, string slot, string ticket,
-                           int battery, string b)
-    : Vehicle(id, owner, phone, entry, slot, ticket),
-      batteryCapacity(battery), brand(b) {}
-
-void ElectricBike::display() const {
-    cout << "===== ELECTRIC BIKE =====\n";
-    cout << "ID: " << vehicleID << endl;
-    cout << "Owner: " << ownerName << endl;
-    cout << "Phone: " << phoneNumber << endl;
-    cout << "Entry: " << entryTime << endl;
-    cout << "Exit: " << exitTime << endl;
-    cout << "Slot: " << parkingSlotID << endl;
-    cout << "Ticket: " << ticketID << endl;
-    cout << "Battery: " << batteryCapacity << " mAh\n";
-    cout << "Brand: " << brand << endl;
+ElectricBike::ElectricBike() : Vehicle(), batteryCapacity(0), maxSpeed(0) {
+    type = VehicleType::ELECTRIC_BIKE;
 }
 
-double ElectricBike::calculateParkingFee(const RateManager& rateManager) const {
-    // Tính số giờ gửi xe
-    time_t now = time(nullptr);
+ElectricBike::ElectricBike(const string &id, const string &plate, const string &custId,
+                           const string &br, const string &mod, const string &col,
+                           int battery, int speed)
+    : Vehicle(id, plate, custId, VehicleType::ELECTRIC_BIKE, br, mod, col),
+      batteryCapacity(battery), maxSpeed(speed) {}
 
-    // Convert entryTime (stored as string) to time_t.
-    // Try epoch-seconds string first, otherwise try parsing "YYYY-MM-DD HH:MM:SS".
-    time_t entry_t = 0;
-    bool parsed = false;
-    try {
-        entry_t = static_cast<time_t>(std::stoll(entryTime));
-        parsed = true;
-    } catch (...) {
-        // fall through to try parsing human-readable format
-    }
-
-    if (!parsed) {
-        std::tm tm = {};
-        std::istringstream ss(entryTime);
-        ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-        if (!ss.fail()) {
-            entry_t = mktime(&tm);
-            parsed = true;
-        }
-    }
-
-    if (!parsed) {
-        // Fallback: if parsing failed, assume entry time equals now so duration is minimum 0.
-        entry_t = now;
-    }
-
-    double hours = difftime(now, entry_t) / 3600.0;
-    if (hours < 1) hours = 1; // tối thiểu 1 giờ
-
-    // Lấy giá từ RateManager
-    double baseRate = rateManager.getRate("ElectricBike");
-
-    // Tính phí
-    double fee = hours * baseRate;
-    return (fee > 15000 ? 15000 : fee); // giới hạn tối đa
+void ElectricBike::displayInfo() const {
+    Vehicle::displayInfo();
+    cout << "Dung luong pin: " << batteryCapacity << " mAh" << endl;
+    cout << "Toc do toi da: " << maxSpeed << " km/h" << endl;
 }
 
+double ElectricBike::calculateParkingFee(long long minutes) const {
+    const double HOURLY_RATE = 3000.0;
+    if (minutes < 30) minutes = 30;
+    return (minutes / 60.0) * HOURLY_RATE;
+}
+
+string ElectricBike::toFileString() const {
+    ostringstream oss;
+    oss << Vehicle::toFileString() << "|" << batteryCapacity << "|" << maxSpeed;
+    return oss.str();
+}
+
+void ElectricBike::fromFileString(const string &line) {
+    istringstream iss(line);
+    string baseData;
+    for (int i = 0; i < 7; i++) {
+        string part;
+        getline(iss, part, '|');
+        if (i > 0) baseData += "|";
+        baseData += part;
+    }
+    Vehicle::fromFileString(baseData);
+    iss >> batteryCapacity;
+    iss.ignore();
+    iss >> maxSpeed;
+}

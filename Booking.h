@@ -3,35 +3,59 @@
 
 #include <string>
 #include <ctime>
-#include "ParkingTicket.h"
+#include <iostream>
 using namespace std;
+
+enum class BookingStatus {
+    PENDING,
+    CONFIRMED,
+    CANCELLED,
+    COMPLETED
+};
 
 class Booking {
 private:
-    string bookingID;
-    string customerID;
-    string licensePlate;
-    string vehicleType;
-    int slotNumber;
-    time_t checkInTime;
-    string status;         // "Pending" hoặc "Confirmed"
-    string paymentMethod;  // "Cash" hoặc "QR"
-    ParkingTicket ticket;  // Vé gửi xe sau khi thanh toán
+    string bookingId;
+    string customerId;
+    string vehicleId;
+    time_t bookingTime;
+    time_t expectedArrival;
+    BookingStatus status;
+    string ticketId;
 
 public:
-    // Constructor
-    Booking(string bID = "", string cID = "", string plate = "", string vType = "", int slot = 0);
-
-    // Methods
-    void confirmPayment(const string& method, double fee);
-    void display() const;
-    void showTicket() const;
-    void saveToFile(const string& filename) const;
-    static void loadFromFile(const string& filename);
+    Booking();
+    Booking(const string &id, const string &custId, const string &vehId, time_t arrival);
 
     // Getters
-    string getBookingID() const { return bookingID; }
-    string getStatus() const { return status; }
+    string getBookingId() const { return bookingId; }
+    string getCustomerId() const { return customerId; }
+    string getVehicleId() const { return vehicleId; }
+    time_t getBookingTime() const { return bookingTime; }
+    time_t getExpectedArrival() const { return expectedArrival; }
+    BookingStatus getStatus() const { return status; }
+    string getTicketId() const { return ticketId; }
+
+    // Setters
+    void setStatus(BookingStatus s) { status = s; }
+    void setTicketId(const string &id) { ticketId = id; }
+    void setExpectedArrival(time_t arrival) { expectedArrival = arrival; }
+
+    // Methods
+    void confirm();
+    void cancel();
+    void complete();
+    bool isExpired() const;
+
+    void displayInfo() const;
+    string toFileString() const;
+    void fromFileString(const string &line);
+
+    friend ostream &operator<<(ostream &os, const Booking &booking);
+    bool operator==(const Booking &other) const;
+
+    static string statusToString(BookingStatus status);
+    static BookingStatus stringToStatus(const string &str);
 };
 
 #endif

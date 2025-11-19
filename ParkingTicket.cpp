@@ -1,62 +1,107 @@
 #include "ParkingTicket.h"
-#include <iostream>
-#include <iomanip>
-#include <cmath>
-
+#include "Utils.h"
+#include <sstream>
 using namespace std;
 
-ParkingTicket::ParkingTicket()
-    : ticketID(""), licensePlate(""), customerPhone(""), customerName(""),
-      vehicleType(""), slotNumber(0), checkInTime(0), checkOutTime(0), fee(0),
-    checkedOut(false), managerAdjusted(false), adjustedBy(""), adjustedAt(0), adjustedNote("") {}
+ParkingTicket::ParkingTicket() : checkInTime(time(nullptr)), checkOutTime(0),
+                                 fee(0.0), status(TicketStatus::ACTIVE) {}
 
-int ParkingTicket::calculateParkingHours() const {
-    time_t end = checkedOut ? checkOutTime : time(nullptr);
-    if (checkInTime == 0) return 0;
-    double seconds = difftime(end, checkInTime);
-    double hours = seconds / 3600.0;
-    // Làm tròn lên mỗi phần giờ => tính theo giờ tính phí
-    return (int)ceil(hours <= 0.0 ? 1.0 : hours);
+ParkingTicket::ParkingTicket(const string &id, const string &custId,
+                             const string &vehId, const string &slot)
+    : ticketId(id), customerId(custId), vehicleId(vehId), slotId(slot),
+      bookingId(""), checkInTime(time(nullptr)), checkOutTime(0),
+      fee(0.0), status(TicketStatus::ACTIVE) {}
+
+void ParkingTicket::checkOut(double calculatedFee) {
+    if (status != TicketStatus::ACTIVE) {
+        throw InvalidInputException("Ticket khong con hoat dong");
+    }
+    checkOutTime = time(nullptr);
+    fee = calculatedFee;
+    status = TicketStatus::PAID;
 }
 
-void ParkingTicket::display() const {
-    cout << "Ticket: " << ticketID << " | Plate: " << licensePlate
-         << " | Slot: " << slotNumber << " | Type: " << vehicleType
-         << " | Check-in: ";
-    if (checkInTime) {
-        char buf[64];
-        tm* t = localtime(&checkInTime);
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
-        cout << buf;
-    } else cout << "-";
+void ParkingTicket::cancel() {
+    if (status == TicketStatus::PAID) {
+        throw InvalidInputException("Khong the huy ticket da thanh toan");
+    }
+    status = TicketStatus::CANCELLED;
+    checkOutTime = time(nullptr);
+}
 
-    cout << " | Check-out: ";
-    if (checkedOut && checkOutTime) {
-        char buf2[64];
-        tm* t2 = localtime(&checkOutTime);
-        strftime(buf2, sizeof(buf2), "%Y-%m-%d %H:%M:%S", t2);
-        cout << buf2;
-    } else cout << "-";
+long long ParkingTicket::getParkingDuration() const {
+    if (checkOutTime == 0) {
+        return Utils::calculateDuration(checkInTime, time(nullptr));
+    }
+    return Utils::calculateDuration(checkInTime, checkOutTime);
+}
 
-    cout << " | Fee: " << fee << (checkedOut ? " (paid)" : " (open)") << endl;
-    if (managerAdjusted) {
-        cout << "    [Adjusted by: " << adjustedBy << " at ";
-        if (adjustedAt) {
-            char buf[64];
-            tm* t = localtime(&adjustedAt);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
-            cout << buf;
-        } else cout << "-";
-        cout << "]";
-        if (!adjustedNote.empty()) cout << " Note: " << adjustedNote;
-        cout << endl;
+void ParkingTicket::displayInfo() const {
+    cout << "Ticket ID: " << ticketId << endl;
+    cout << "Khach hang ID: " << customerId << endl;
+    cout << "Xe ID: " << vehicleId << endl;
+    cout << "Vi tri: " << slotId << endl;
+    if (!bookingId.empty()) {
+        cout << "Booking ID: " << bookingId << endl;
+    }
+    cout << "Check-in: " << Utils::timeToString(checkInTime) << endl;
+    if (checkOutTime > 0) {
+        cout << "Check-out: " << Utils::timeToString(checkOutTime) << endl;
+        cout << "Thoi gian gui: " << getParkingDuration() << " phut" << endl;
+        cout << "Phi: " << fee << " VND" << endl;
+    }
+    cout << "Trang thai: " << statusToString(status) << endl;
+}
+
+string ParkingTicket::toFileString() const {
+    ostringstream oss;
+    oss << ticketId << "|" << customerId << "|" << vehicleId << "|"
+        << slotId << "|" << bookingId << "|"
+        << checkInTime << "|" << checkOutTime << "|"
+        << fee << "|" << statusToString(status);
+    return oss.str();
+}
+
+void ParkingTicket::fromFileString(const string &line) {
+    istringstream iss(line);
+    string statusStr;
+    getline(iss, ticketId, '|');
+    getline(iss, customerId, '|');
+    getline(iss, vehicleId, '|');
+    getline(iss, slotId, '|');
+    getline(iss, bookingId, '|');
+    iss >> checkInTime;
+    iss.ignore();
+    iss >> checkOutTime;
+    iss.ignore();
+    iss >> fee;
+    iss.ignore();
+    getline(iss, statusStr);
+    status = stringToStatus(statusStr);
+}
+
+ostream &operator<<(ostream &os, const ParkingTicket &ticket) {
+    os << "Ticket " << ticket.ticketId << " - "
+       << ParkingTicket::statusToString(ticket.status);
+    return os;
+}
+
+bool ParkingTicket::operator==(const ParkingTicket &other) const {
+    return ticketId == other.ticketId;
+}
+
+string ParkingTicket::statusToString(TicketStatus status) {
+    switch (status) {
+    case TicketStatus::ACTIVE: return "ACTIVE";
+    case TicketStatus::PAID: return "PAID";
+    case TicketStatus::CANCELLED: return "CANCELLED";
+    default: return "UNKNOWN";
     }
 }
 
-void ParkingTicket::managerAdjustFee(double newFee, const string& managerID, const string& note) {
-    fee = newFee;
-    managerAdjusted = true;
-    adjustedBy = managerID;
-    adjustedAt = time(nullptr);
-    adjustedNote = note;
+TicketStatus ParkingTicket::stringToStatus(const string &str) {
+    if (str == "ACTIVE") return TicketStatus::ACTIVE;
+    if (str == "PAID") return TicketStatus::PAID;
+    if (str == "CANCELLED") return TicketStatus::CANCELLED;
+    return TicketStatus::ACTIVE;
 }

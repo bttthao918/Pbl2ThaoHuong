@@ -3,67 +3,62 @@
 
 #include <string>
 #include <ctime>
+#include <iostream>
 using namespace std;
+
+enum class TicketStatus {
+    ACTIVE,
+    PAID,
+    CANCELLED
+};
 
 class ParkingTicket {
 private:
-    string ticketID;
-    string licensePlate;
-    string customerPhone;
-    string customerName;
-    string vehicleType;
-    int slotNumber; // số chỗ đỗ
+    string ticketId;
+    string customerId;
+    string vehicleId;
+    string slotId;
+    string bookingId;
     time_t checkInTime;
     time_t checkOutTime;
     double fee;
-    bool checkedOut;
-    // Manager adjustment metadata
-    bool managerAdjusted;
-    string adjustedBy;
-    time_t adjustedAt;
-    string adjustedNote;
-    // Manager who created/handled the ticket
-    string managerID;
-    string managerName;
+    TicketStatus status;
 
 public:
     ParkingTicket();
+    ParkingTicket(const string &id, const string &custId, const string &vehId, const string &slot);
+
+    // Getters
+    string getTicketId() const { return ticketId; }
+    string getCustomerId() const { return customerId; }
+    string getVehicleId() const { return vehicleId; }
+    string getSlotId() const { return slotId; }
+    string getBookingId() const { return bookingId; }
+    time_t getCheckInTime() const { return checkInTime; }
+    time_t getCheckOutTime() const { return checkOutTime; }
+    double getFee() const { return fee; }
+    TicketStatus getStatus() const { return status; }
 
     // Setters
-    void setTicketID(const string& id) { ticketID = id; }
-    void setLicensePlate(const string& lp) { licensePlate = lp; }
-    void setCustomerPhone(const string& phone) { customerPhone = phone; }
-    void setCustomerName(const string& name) { customerName = name; }
-    void setVehicleType(const string& vt) { vehicleType = vt; }
-    void setSlotNumber(int n) { slotNumber = n; }
-    void setCheckInTime(time_t t) { checkInTime = t; }
-    void setCheckOutTime(time_t t) { checkOutTime = t; }
-    void setFee(double f) { fee = f; }
-    void setCheckedOut(bool v) { checkedOut = v; }
+    void setBookingId(const string &id) { bookingId = id; }
+    void setSlotId(const string &id) { slotId = id; }
+    void setStatus(TicketStatus s) { status = s; }
 
-    // Getters
-    string getTicketID() const { return ticketID; }
-    string getLicensePlate() const { return licensePlate; }
-    int getSlotNumber() const { return slotNumber; }
-    bool isCheckedOut() const { return checkedOut; }
+    // Methods
+    void checkOut(double calculatedFee);
+    void cancel();
+    bool isActive() const { return status == TicketStatus::ACTIVE; }
+    long long getParkingDuration() const;
 
-    // Utilities
-    int calculateParkingHours() const; // số giờ (làm tròn lên)
-    void display() const; // in vé
-    // Manager can adjust fee after checkout
-    void managerAdjustFee(double newFee, const string& managerID, const string& note = "");
+    void displayInfo() const;
+    string toFileString() const;
+    void fromFileString(const string &line);
 
-    // Getters
-    double getFee() const { return fee; }
-    bool wasAdjusted() const { return managerAdjusted; }
-    string getAdjustedBy() const { return adjustedBy; }
-    time_t getAdjustedAt() const { return adjustedAt; }
-    string getAdjustedNote() const { return adjustedNote; }
-    // Manager setters/getters
-    void setManagerID(const string& id) { managerID = id; }
-    void setManagerName(const string& name) { managerName = name; }
-    string getManagerID() const { return managerID; }
-    string getManagerName() const { return managerName; }
+    friend ostream &operator<<(ostream &os, const ParkingTicket &ticket);
+    bool operator==(const ParkingTicket &other) const;
+
+    static string statusToString(TicketStatus status);
+    static TicketStatus stringToStatus(const string &str);
 };
 
 #endif

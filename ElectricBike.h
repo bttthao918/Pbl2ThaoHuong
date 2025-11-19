@@ -2,18 +2,30 @@
 #define ELECTRICBIKE_H
 
 #include "Vehicle.h"
+using namespace std;
 
-class ElectricBike : public Vehicle {
+class ElectricBike : public Vehicle
+{
 private:
     int batteryCapacity;
-    string brand;
+    int maxSpeed;
 
 public:
-    ElectricBike(string id, string owner, string phone, string entry,
-                 string slot, string ticket, int battery, string brand);
+    ElectricBike();
+    ElectricBike(const string &id, const string &plate, const string &custId,
+                 const string &br, const string &mod, const string &col,
+                 int battery, int speed);
 
-    void display() const override;
-    double calculateParkingFee(const RateManager& rateManager) const;
+    int getBatteryCapacity() const;
+    int getMaxSpeed() const;
+    void setBatteryCapacity(int battery);
+    void setMaxSpeed(int speed);
+
+    void displayInfo() const override;
+    double calculateParkingFee(long long minutes) const override;
+    string getTypeString() const override;
+    string toFileString() const override;
+    void fromFileString(const string &line) override;
 };
 
 #endif
