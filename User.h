@@ -1,46 +1,54 @@
 #ifndef USER_H
 #define USER_H
-
+#include "Exception.h"
 #include <string>
-using namespace std;
+#include <iostream>
+
+using namespace std;  // <<< THÊM VÀO
+
+enum class UserRole
+{
+    CUSTOMER,
+    ADMIN
+};
 
 class User
 {
 protected:
-    string userID;
+    string userId;
     string username;
     string password;
     string fullName;
     string phoneNumber;
     string email;
+    UserRole role;
 
 public:
-    // Constructor
-    User(string id, string user, string pass, string name,
-         string phone, string mail);
+    User();
+    User(const string &id, const string &uname, const string &pwd,
+         const string &name, const string &phone, const string &mail, UserRole r);
 
-    // Pure virtual methods
-    virtual void display() = 0;
-    virtual string getUserType() = 0;
-    virtual void showMenu() = 0;
-    virtual void saveToFile(const string &filename);
-    virtual void loadFromFile(const string &filename);
+    virtual ~User() {}
 
-    // Common methods
-    bool login(string user, string pass);
-    void changePassword(string oldPass, string newPass);
-    bool validatePhone(string phone);
-    bool validateEmail(string email);
-    void updateProfile(string name, string phone, string email);
-
-    // Getters
-    string getUserID() const { return userID; }
+    string getUserId() const { return userId; }
     string getUsername() const { return username; }
+    string getPassword() const { return password; }
     string getFullName() const { return fullName; }
     string getPhoneNumber() const { return phoneNumber; }
     string getEmail() const { return email; }
+    UserRole getRole() const { return role; }
 
-    virtual ~User() {}
+    void setPassword(const string &pwd) { password = pwd; }
+    void setFullName(const string &name) { fullName = name; }
+    void setPhoneNumber(const string &phone);
+    void setEmail(const string &mail);
+
+    virtual void displayInfo() const;
+    virtual string toFileString() const;
+    virtual void fromFileString(const string &line);
+
+    friend ostream &operator<<(ostream &os, const User &user);
+    bool operator==(const User &other) const;
 };
 
 #endif

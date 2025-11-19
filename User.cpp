@@ -1,95 +1,81 @@
 #include "User.h"
-#include <iostream>
-#include <regex>
-#include <fstream>
-#include <cctype>
+#include "Utils.h"
+#include <sstream>
+#include <iomanip>
+
 using namespace std;
 
-// Constructor
-User::User(string id, string user, string pass, string name, 
-           string phone, string mail)
+User::User() : role(UserRole::CUSTOMER) {}
+
+User::User(const string &id, const string &uname, const string &pwd,
+           const string &name, const string &phone, const string &mail, UserRole r)
+    : userId(id), username(uname), password(pwd), fullName(name),
+      phoneNumber(phone), email(mail), role(r)
 {
-    userID = id;
-    username = user;
-    password = pass;
-    fullName = name;
+    if (!Utils::isValidPhoneNumber(phone))
+        throw InvalidInputException("So dien thoai khong hop le");
+
+    if (!Utils::isValidEmail(mail))
+        throw InvalidInputException("Email khong hop le");
+}
+
+void User::setPhoneNumber(const string &phone)
+{
+    if (!Utils::isValidPhoneNumber(phone))
+        throw InvalidInputException("So dien thoai khong hop le");
     phoneNumber = phone;
+}
+
+void User::setEmail(const string &mail)
+{
+    if (!Utils::isValidEmail(mail))
+        throw InvalidInputException("Email khong hop le");
     email = mail;
 }
 
-// Đăng nhập
-bool User::login(string user, string pass) {
-    return (username == user && password == pass);
+void User::displayInfo() const
+{
+    cout << "User ID: " << userId << endl;
+    cout << "Username: " << username << endl;
+    cout << "Ho ten: " << fullName << endl;
+    cout << "Dien thoai: " << phoneNumber << endl;
+    cout << "Email: " << email << endl;
+    cout << "Vai tro: " << (role == UserRole::CUSTOMER ? "Khach hang" : "Quan ly") << endl;
 }
 
-// Đổi mật khẩu
-void User::changePassword(string oldPass, string newPass) {
-    if (password == oldPass) {
-        password = newPass;
-        cout << ">>> Đổi mật khẩu thành công!\n";
-    } else {
-        cout << ">>> Sai mật khẩu cũ!\n";
-    }
+string User::toFileString() const
+{
+    ostringstream oss;
+    oss << userId << "|" << username << "|" << password << "|"
+        << fullName << "|" << phoneNumber << "|" << email << "|"
+        << (role == UserRole::CUSTOMER ? "CUSTOMER" : "ADMIN");
+    return oss.str();
 }
 
-// Kiểm tra số điện thoại hợp lệ (10 chữ số)
-bool User::validatePhone(string phone) {
-    if (phone.length() != 10) return false;
-    for (char c : phone)
-        if (!isdigit(c)) return false;
-    return true;
+void User::fromFileString(const string &line)
+{
+    istringstream iss(line);
+    string roleStr;
+
+    getline(iss, userId, '|');
+    getline(iss, username, '|');
+    getline(iss, password, '|');
+    getline(iss, fullName, '|');
+    getline(iss, phoneNumber, '|');
+    getline(iss, email, '|');
+    getline(iss, roleStr);
+
+    role = (roleStr == "CUSTOMER") ? UserRole::CUSTOMER : UserRole::ADMIN;
 }
 
-// Kiểm tra email hợp lệ
-bool User::validateEmail(string email) {
-    // Regex email đơn giản
-    regex pattern(R"((\w+)(\.?\w+)*@\w+\.\w+)");
-    return regex_match(email, pattern);
+ostream &operator<<(ostream &os, const User &user)
+{
+    os << "ID: " << user.userId << ", Ten: " << user.fullName
+       << ", SDT: " << user.phoneNumber;
+    return os;
 }
 
-// Cập nhật thông tin
-void User::updateProfile(string name, string phone, string email) {
-    if (!validatePhone(phone)) {
-        cout << ">>> Số điện thoại không hợp lệ!\n";
-        return;
-    }
-    if (!validateEmail(email)) {
-        cout << ">>> Email không hợp lệ!\n";
-        return;
-    }
-
-    fullName = name;
-    phoneNumber = phone;
-    this->email = email;
-
-    cout << ">>> Cập nhật thông tin thành công!\n";
+bool User::operator==(const User &other) const
+{
+    return userId == other.userId;
 }
-
-
-void User::saveToFile(const string& filename) {
-    ofstream outFile(filename, ios::app);
-    if (!outFile) {
-        cerr << "Không thể mở file để ghi!\n";
-        return;
-    }
-    outFile << userID << "|" << username << "|" << password << "|"
-            << fullName << "|" << phoneNumber << "|" << email << "\n";
-    outFile.close();
-}
-
-
-
-void User::loadFromFile(const string& filename) {
-    ifstream inFile(filename);
-    if (!inFile) {
-        cerr << "Không thể mở file để đọc!\n";
-        return;
-    }
-    string line;
-    while (getline(inFile, line)) {
-        // Có thể parse nếu cần
-        cout << "Dòng dữ liệu: " << line << endl;
-    }
-    inFile.close();
-}
-

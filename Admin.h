@@ -2,40 +2,26 @@
 #define ADMIN_H
 
 #include "User.h"
-#include "ParkingSlot.h"
-#include "DoubleLinkedList.h"
-#include <map>
-#include <iostream>
-#include "Customer.h"
-#include "RateManager.h"
+
 using namespace std;
 
 class Admin : public User
 {
 private:
-    Admin<ParkingSlot> slots;  // Danh sách chỗ gửi xe
-    map<string, double> rates; // Giá vé theo loại xe
-    RateManager &rateManager;
+    string employeeID;   // Mã nhân viên
 
 public:
-    Admin(string id, string user, string pass, string name, string phone, string mail, RateManager &rm);
+    Admin();
+    Admin(const string &id, const string &uname, const string &pwd,
+          const string &name, const string &phone, const string &mail,
+          const string &empId);
 
-    void display() override;
-    string getUserType() override;
-    void showMenu(Admin<Customer> &customers);
+    string getEmployeeID() const { return employeeID; }
+    void setEmployeeID(const string &id) { employeeID = id; }
 
-    // Quản lý chỗ gửi xe
-    void viewSlots() const;
-    void addSlot();
-    void removeSlot();
-    void modifySlot();
-
-    // Quản lý giá vé
-    void viewRates() const;
-    void updateRates();
-
-    // Quản lý khách hàng (demo)
-    void manageCustomers(Admin<Customer> &customers);
+    void displayInfo() const override;
+    string toFileString() const override;
+    void fromFileString(const string &line) override;
 };
 
 #endif

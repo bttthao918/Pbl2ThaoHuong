@@ -1,4 +1,5 @@
 #include "Vehicle.h"
+#include "Exceptions.h"
 #include "Utils.h"
 #include <sstream>
 #include <iomanip>

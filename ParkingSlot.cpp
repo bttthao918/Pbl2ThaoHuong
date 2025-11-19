@@ -1,5 +1,5 @@
 #include "ParkingSlot.h"
-#include "Utils.h"
+#include "Exceptions.h"
 #include <sstream>
 
 ParkingSlot::ParkingSlot() : status(SlotStatus::AVAILABLE),
