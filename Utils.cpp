@@ -1,7 +1,9 @@
 #include "Utils.h"
+#include <iostream>
 #include <algorithm>
 #include <regex>
 #include <random>
+#include <ctime>
 
 using namespace std;
 
@@ -84,6 +86,36 @@ namespace Utils
         return result;
     }
 
+    string createInitials(const string &fullName)
+    {
+        string initials = "";
+        istringstream iss(fullName);
+        string word;
+
+        while (iss >> word)
+        {
+            if (!word.empty())
+            {
+                char firstChar = word[0];
+                if (isalpha(static_cast<unsigned char>(firstChar)))
+                {
+                    initials += static_cast<char>(toupper(firstChar));
+                }
+            }
+        }
+
+        if (initials.empty())
+        {
+            initials = "XXX";
+        }
+        else if (initials.length() > 4)
+        {
+            initials = initials.substr(0, 4);
+        }
+
+        return initials;
+    }
+
     string generateID(const string &prefix)
     {
         static random_device rd;
@@ -94,4 +126,22 @@ namespace Utils
         return prefix + to_string(now) + to_string(dis(gen));
     }
 
+    string generateReadableVehicleID(const string &ownerName,
+                                     const string &phoneNumber,
+                                     int vehicleCount)
+    {
+        string initials = createInitials(ownerName);
+
+        string phonePart = phoneNumber;
+        if (phoneNumber.length() > 4)
+        {
+            phonePart = phoneNumber.substr(phoneNumber.length() - 4);
+        }
+
+        ostringstream oss;
+        oss << setw(2) << setfill('0') << vehicleCount;
+        string vehicleNum = oss.str();
+
+        return initials + "_" + phonePart + "_" + vehicleNum;
+    }
 } // namespace Utils

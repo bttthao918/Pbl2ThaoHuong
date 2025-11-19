@@ -87,17 +87,19 @@ public:
     DoubleLinkedList<Booking> getBookingsByCustomer(const string &customerId);
     DoubleLinkedList<Booking> getAllBookings();
     bool confirmBooking(const string &bookingId);
-    bool cancelBooking(const string &bookingId);
+    void cancelBooking();
 
     // Ticket management (Check-in/Check-out)
     string checkIn(const string &customerId, const string &vehicleId,
-                        const string &bookingId = ""); // Return ticketId
+                   const string &bookingId = ""); // Return ticketId
     bool checkOut(const string &ticketId);
     ParkingTicket *getTicket(const string &ticketId);
     DoubleLinkedList<ParkingTicket> getTicketsByCustomer(const string &customerId);
     DoubleLinkedList<ParkingTicket> getTicketsByVehicle(const string &vehicleId);
     DoubleLinkedList<ParkingTicket> getAllTickets();
     DoubleLinkedList<ParkingTicket> getActiveTickets();
+    void adminPriceManagement(ParkingManager &manager);
+    void customerViewPricing();
 
     // Search & Filter
     DoubleLinkedList<shared_ptr<User>> searchUsers(const string &keyword);
@@ -136,7 +138,7 @@ private:
     void saveTickets();
 
     string generateUserId();
-    string generateVehicleId();
+    string generateVehicleId(const string &customerId);
     string generateSlotId();
     string generateBookingId();
     string generateTicketId();

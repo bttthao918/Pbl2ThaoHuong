@@ -1,4 +1,5 @@
 #include "Car.h"
+#include "PricingConfig.h"
 #include <sstream>
 using namespace std;
 
@@ -22,12 +23,13 @@ void Car::displayInfo() const
 
 double Car::calculateParkingFee(long long minutes) const
 {
-    const double STANDARD_RATE = 15000.0;
-    const double LUXURY_RATE = 20000.0;
-    if (minutes < 30)
-        minutes = 30;
-    double rate = isLuxury ? LUXURY_RATE : STANDARD_RATE;
-    return (minutes / 60.0) * rate;
+    PricingConfig *pricing = PricingConfig::getInstance();
+    const double HOURLY_RATE = pricing->getPricePerHour(VehicleType::CAR, isLuxury);
+    int minMinutes = pricing->getMinimumMinutes();
+
+    if (minutes < minMinutes)
+        minutes = minMinutes;
+    return (minutes / 60.0) * HOURLY_RATE;
 }
 
 string Car::getTypeString() const

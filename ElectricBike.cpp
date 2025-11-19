@@ -1,4 +1,5 @@
 #include "ElectricBike.h"
+#include "PricingConfig.h"
 #include <sstream>
 using namespace std;
 
@@ -22,9 +23,12 @@ void ElectricBike::displayInfo() const
 
 double ElectricBike::calculateParkingFee(long long minutes) const
 {
-    const double HOURLY_RATE = 3000.0;
-    if (minutes < 30)
-        minutes = 30;
+    PricingConfig *pricing = PricingConfig::getInstance();
+    const double HOURLY_RATE = pricing->getElectricBikePrice();
+    int minMinutes = pricing->getMinimumMinutes();
+
+    if (minutes < minMinutes)
+        minutes = minMinutes;
     return (minutes / 60.0) * HOURLY_RATE;
 }
 

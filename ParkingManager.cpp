@@ -1,8 +1,13 @@
 #include "ParkingManager.h"
 #include "Utils.h"
+#include "Exceptions.h"
+#include "PricingConfig.h"
+#include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
+#include <limits>
+using namespace std;
 
 ParkingManager::ParkingManager() : currentUser(nullptr)
 {
@@ -165,7 +170,8 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
 
     try
     {
-        string vehicleId = generateVehicleId();
+        // Tạo ID dễ nhớ dựa trên thông tin khách hàng
+        string vehicleId = generateVehicleId(customerId);
         shared_ptr<Vehicle> newVehicle;
 
         switch (type)
@@ -187,6 +193,10 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
 
         vehicles.pushBack(newVehicle);
         saveVehicles();
+
+        // In ra Vehicle ID để khách hàng biết
+        cout << "Da tao Vehicle ID: " << vehicleId << endl;
+
         return true;
     }
     catch (const exception &e)
@@ -381,21 +391,61 @@ bool ParkingManager::confirmBooking(const string &bookingId)
     }
 }
 
-bool ParkingManager::cancelBooking(const string &bookingId)
+void ParkingManager::cancelBooking()
 {
+    // Lấy tất cả booking
+    auto allBookings = getAllBookings();
+    if (allBookings.empty())
+    {
+        cout << "Không có booking nào.\n";
+        return;
+    }
+
+    // Hiển thị danh sách booking
+    cout << "Danh sách tất cả booking:\n";
+    for (const auto &booking : allBookings)
+    {
+        cout << "-------------------------\n";
+        booking.displayInfo();
+    }
+
+    // Người dùng nhập ID
+    cout << "\nNhập Booking ID bạn muốn hủy: ";
+    string bookingId;
+    cin >> bookingId;
+
     Booking *booking = getBooking(bookingId);
     if (!booking)
-        return false;
-
-    try
     {
-        booking->cancel();
-        saveBookings();
-        return true;
+        cout << "Không tìm thấy booking với ID: " << bookingId << endl;
+        return;
     }
-    catch (const exception &e)
+
+    // Hiển thị chi tiết booking để xác nhận
+    cout << "\nThông tin booking bạn chọn:\n";
+    booking->displayInfo();
+
+    // Xác nhận
+    cout << "\nBạn có chắc chắn muốn hủy booking này? (y/n): ";
+    char choice;
+    cin >> choice;
+
+    if (choice == 'y' || choice == 'Y')
     {
-        throw;
+        try
+        {
+            booking->cancel();
+            saveBookings();
+            cout << "Hủy booking thành công.\n";
+        }
+        catch (const exception &e)
+        {
+            cout << "Lỗi khi hủy booking: " << e.what() << endl;
+        }
+    }
+    else
+    {
+        cout << "Đã hủy thao tác.\n";
     }
 }
 
@@ -532,6 +582,106 @@ DoubleLinkedList<ParkingTicket> ParkingManager::getActiveTickets()
 {
     return tickets.filter([](const ParkingTicket &t)
                           { return t.isActive(); });
+}
+
+void ParkingManager::adminPriceManagement(ParkingManager &manager)
+{
+    PricingConfig *pricing = PricingConfig::getInstance();
+
+    while (true)
+    {
+        Utils::clearScreen();
+        cout << "========== QUAN LY GIA VE ==========\n";
+
+        // Hiển thị bảng giá hiện tại
+        pricing->displayPricing();
+
+        cout << "\n1. Thay doi gia xe may\n";
+        cout << "2. Thay doi gia o to thuong\n";
+        cout << "3. Thay doi gia o to sang\n";
+        cout << "4. Thay doi gia xe dap dien\n";
+        cout << "5. Thay doi thoi gian toi thieu\n";
+        cout << "0. Quay lai\n";
+
+        int choice;
+        cout << "\nNhap lua chon: ";
+        cin >> choice;
+        cin.ignore();
+
+        if (choice == 0)
+            break;
+
+        try
+        {
+            double newPrice;
+            int newMinutes;
+
+            switch (choice)
+            {
+            case 1:
+                cout << "Nhap gia moi cho xe may (VND/gio): ";
+                cin >> newPrice;
+                cin.ignore();
+                pricing->setMotorcyclePrice(newPrice);
+                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                break;
+
+            case 2:
+                cout << "Nhap gia moi cho o to thuong (VND/gio): ";
+                cin >> newPrice;
+                cin.ignore();
+                pricing->setCarStandardPrice(newPrice);
+                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                break;
+
+            case 3:
+                cout << "Nhap gia moi cho o to sang (VND/gio): ";
+                cin >> newPrice;
+                cin.ignore();
+                pricing->setCarLuxuryPrice(newPrice);
+                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                break;
+
+            case 4:
+                cout << "Nhap gia moi cho xe dap dien (VND/gio): ";
+                cin >> newPrice;
+                cin.ignore();
+                pricing->setElectricBikePrice(newPrice);
+                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                break;
+
+            case 5:
+                cout << "Nhap thoi gian toi thieu moi (phut): ";
+                cin >> newMinutes;
+                cin.ignore();
+                pricing->setMinimumMinutes(newMinutes);
+                cout << "\n✓ Cap nhat thanh cong!\n";
+                break;
+
+            default:
+                cout << "Lua chon khong hop le!\n";
+            }
+        }
+        catch (const exception &e)
+        {
+            cout << "Loi: " << e.what() << endl;
+        }
+        Utils::pause();
+    }
+}
+
+void ParkingManager::customerViewPricing()
+{
+    Utils::clearScreen();
+    PricingConfig *pricing = PricingConfig::getInstance();
+    pricing->displayPricing();
+
+    cout << "\nLUU Y:\n";
+    cout << "- Phi duoc tinh theo gio, lam tron len\n";
+    cout << "- Thoi gian toi thieu: " << pricing->getMinimumMinutes() << " phut\n";
+    cout << "- Vi du: Gui 45 phut = 1 gio\n";
+
+    Utils::pause();
 }
 
 // ========== Search & Filter ==========
@@ -1011,14 +1161,38 @@ void ParkingManager::saveTickets()
 }
 
 // ========== Helper Functions ==========
+
 string ParkingManager::generateUserId()
 {
     return Utils::generateID("U");
 }
 
-string ParkingManager::generateVehicleId()
+string ParkingManager::generateVehicleId(const string &customerId)
 {
-    return Utils::generateID("V");
+    // Lấy thông tin khách hàng
+    Customer *customer = getCustomer(customerId);
+    if (!customer)
+    {
+        // Fallback nếu không tìm thấy customer
+        return Utils::generateID("V");
+    }
+
+    // Đếm số xe hiện tại của khách hàng
+    int vehicleCount = 0;
+    for (auto it = vehicles.begin(); it != vehicles.end(); ++it)
+    {
+        if ((*it)->getCustomerId() == customerId)
+        {
+            vehicleCount++;
+        }
+    }
+    vehicleCount++; // Xe mới này
+
+    // Tạo ID dễ nhớ
+    return Utils::generateReadableVehicleID(
+        customer->getFullName(),
+        customer->getPhoneNumber(),
+        vehicleCount);
 }
 
 string ParkingManager::generateSlotId()
