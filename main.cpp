@@ -307,6 +307,7 @@ void showCustomerMenu(ParkingManager &manager)
                 break;
             case 3:
                 manager.customerViewPricing();
+                Utils::pause();
                 break;
             case 4:
                 viewCustomerHistory(manager);
@@ -757,6 +758,7 @@ void viewCustomerHistory(ParkingManager &manager)
             cout << "----------------------------\n";
         }
     }
+    Utils::pause();
 }
 
 void customerAccountManagement(ParkingManager &manager)
