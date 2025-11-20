@@ -40,7 +40,6 @@ void User::displayInfo() const
     cout << "Ho ten: " << fullName << endl;
     cout << "Dien thoai: " << phoneNumber << endl;
     cout << "Email: " << email << endl;
-    cout << "Vai tro: " << (role == UserRole::CUSTOMER ? "Khach hang" : "Quan ly") << endl;
 }
 
 string User::toFileString() const

@@ -5,6 +5,8 @@
 #include <functional>
 #include <stdexcept>
 
+using namespace std;
+
 template <typename T>
 class DoubleLinkedList
 {
@@ -97,7 +99,7 @@ public:
     void popFront()
     {
         if (!head)
-            throw std::runtime_error("List is empty");
+            throw runtime_error("List is empty");
         Node *temp = head;
         head = head->next;
         if (head)
@@ -112,7 +114,7 @@ public:
     void popBack()
     {
         if (!tail)
-            throw std::runtime_error("List is empty");
+            throw runtime_error("List is empty");
         Node *temp = tail;
         tail = tail->prev;
         if (tail)
@@ -149,7 +151,7 @@ public:
     }
 
     // Find element by condition
-    T *find(std::function<bool(const T &)> predicate)
+    T *find(function<bool(const T &)> predicate)
     {
         Node *current = head;
         while (current)
@@ -164,7 +166,7 @@ public:
     }
 
     // Remove element by condition
-    bool remove(std::function<bool(const T &)> predicate)
+    bool remove(function<bool(const T &)> predicate)
     {
         Node *current = head;
         while (current)
@@ -190,13 +192,18 @@ public:
         return false;
     }
 
-    void forEach(std::function<void(const T &)> action) const
+    void forEach(function<void(const T &)> action) const
     {
-        for_each(action);
+        Node *current = head;
+        while (current)
+        {
+            action(current->data);
+            current = current->next;
+        }
     }
 
     // Filter elements
-    DoubleLinkedList<T> filter(std::function<bool(const T &)> predicate) const
+    DoubleLinkedList<T> filter(function<bool(const T &)> predicate) const
     {
         DoubleLinkedList<T> result;
         Node *current = head;
@@ -212,7 +219,7 @@ public:
     }
 
     // Sort using merge sort (stable, O(n log n))
-    void sort(std::function<bool(const T &, const T &)> compare)
+    void sort(function<bool(const T &, const T &)> compare)
     {
         if (count <= 1)
             return;
@@ -301,7 +308,7 @@ public:
 
 private:
     // Merge sort helper functions
-    Node *mergeSort(Node *h, std::function<bool(const T &, const T &)> compare)
+    Node *mergeSort(Node *h, function<bool(const T &, const T &)> compare)
     {
         if (!h || !h->next)
             return h;
@@ -334,7 +341,7 @@ private:
         return slow;
     }
 
-    Node *merge(Node *left, Node *right, std::function<bool(const T &, const T &)> compare)
+    Node *merge(Node *left, Node *right, function<bool(const T &, const T &)> compare)
     {
         if (!left)
             return right;

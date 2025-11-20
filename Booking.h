@@ -20,6 +20,7 @@ private:
     string bookingId;
     string customerId;
     string vehicleId;
+    string slotId;
     time_t bookingTime;
     time_t expectedArrival;
     BookingStatus status;
@@ -33,6 +34,7 @@ public:
     string getBookingId() const { return bookingId; }
     string getCustomerId() const { return customerId; }
     string getVehicleId() const { return vehicleId; }
+    string getSlotId() const { return slotId; }
     time_t getBookingTime() const { return bookingTime; }
     time_t getExpectedArrival() const { return expectedArrival; }
     BookingStatus getStatus() const { return status; }
@@ -41,6 +43,7 @@ public:
     // Setters
     void setStatus(BookingStatus s) { status = s; }
     void setTicketId(const string &id) { ticketId = id; }
+    void setSlotId(const std::string &id) { slotId = id; }
     void setExpectedArrival(time_t arrival) { expectedArrival = arrival; }
 
     // Methods

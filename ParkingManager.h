@@ -28,7 +28,8 @@ private:
     shared_ptr<User> currentUser; // User đang đăng nhập
 
     // File paths
-    const string USERS_FILE = "users.txt";
+    const string CUSTOMERS_FILE = "customers.txt";
+    const string ADMINS_FILE = "admins.txt";
     const string VEHICLES_FILE = "vehicles.txt";
     const string SLOTS_FILE = "slots.txt";
     const string BOOKINGS_FILE = "bookings.txt";
@@ -53,9 +54,16 @@ public:
     DoubleLinkedList<shared_ptr<User>> getAllCustomers();
     bool updateCustomerInfo(const string &customerId, const string &fullName,
                             const string &phone, const string &email);
-    bool addBalance(const string &customerId, double amount);
-
     // Admin specific
+    bool addCustomer(const string &username, const string &password,
+                     const string &fullName, const string &phone,
+                     const string &email);
+    bool deleteCustomer(const string &customerId);
+    bool updateCustomerDetails(const string &customerId,
+                               const string &fullName,
+                               const string &phone,
+                               const string &email,
+                               int loyaltyPoints);
     Admin *getAdmin(const string &adminId);
     DoubleLinkedList<shared_ptr<User>> getAllAdmins();
 
@@ -76,13 +84,16 @@ public:
     ParkingSlot *getParkingSlot(const string &slotId);
     ParkingSlot *getParkingSlotByNumber(const string &slotNumber);
     DoubleLinkedList<ParkingSlot> getAvailableSlots(VehicleType type);
+    DoubleLinkedList<ParkingSlot> getAvailableSlotsByType(VehicleType type);
     DoubleLinkedList<ParkingSlot> getAllSlots();
     bool updateSlotStatus(const string &slotId, SlotStatus status);
     bool deleteParkingSlot(const string &slotId);
 
     // Booking management
-    bool createBooking(const string &customerId, const string &vehicleId,
-                       time_t expectedArrival);
+    bool createBooking(const string &customerId,
+                       const string &vehicleId,
+                       time_t expectedArrival,
+                       const string &slotId = "");
     Booking *getBooking(const string &bookingId);
     DoubleLinkedList<Booking> getBookingsByCustomer(const string &customerId);
     DoubleLinkedList<Booking> getAllBookings();
@@ -94,10 +105,12 @@ public:
                    const string &bookingId = ""); // Return ticketId
     bool checkOut(const string &ticketId);
     ParkingTicket *getTicket(const string &ticketId);
+    DoubleLinkedList<ParkingTicket> getAllTickets();
     DoubleLinkedList<ParkingTicket> getTicketsByCustomer(const string &customerId);
     DoubleLinkedList<ParkingTicket> getTicketsByVehicle(const string &vehicleId);
-    DoubleLinkedList<ParkingTicket> getAllTickets();
-    DoubleLinkedList<ParkingTicket> getActiveTickets();
+    DoubleLinkedList<ParkingTicket> getTicketsByStatus(TicketStatus status);
+    void displayTicketDetail(ParkingManager &manager, const string &ticketId);
+    void advancedTicketSearch(ParkingManager &manager);
     void adminPriceManagement(ParkingManager &manager);
     void customerViewPricing();
 
@@ -109,7 +122,6 @@ public:
     // Sort
     void sortUsersByName();
     void sortVehiclesByPlate();
-    void sortTicketsByTime();
 
     // Statistics & Reports
     int getTotalSlots() const;
