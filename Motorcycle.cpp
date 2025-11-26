@@ -1,7 +1,11 @@
 #include "Motorcycle.h"
 #include "PricingConfig.h"
+#include "UI.h"
 #include <sstream>
+#include <iomanip>
 using namespace std;
+
+extern UI ui;
 
 Motorcycle::Motorcycle() : Vehicle(), engineCapacity(0)
 {
@@ -13,10 +17,21 @@ Motorcycle::Motorcycle(const string &id, const string &plate, const string &cust
     : Vehicle(id, plate, custId, VehicleType::MOTORCYCLE, br, mod, col),
       engineCapacity(capacity) {}
 
+void Motorcycle::setEngineCapacity(int capacity)
+{
+    engineCapacity = capacity;
+}
+
+int Motorcycle::getEngineCapacity() const
+{
+    return engineCapacity;
+}
+
 void Motorcycle::displayInfo() const
 {
     Vehicle::displayInfo();
-    cout << "Phan khoi: " << engineCapacity << " cc" << endl;
+    ui.printRow("          | ", "Phan khoi: " + to_string(engineCapacity) + " cc");
+    ui.printHorizontalLine('+', '-', '+');
 }
 
 double Motorcycle::calculateParkingFee(long long minutes) const

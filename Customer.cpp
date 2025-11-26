@@ -1,7 +1,10 @@
 #include "Customer.h"
 #include "Exceptions.h"
+#include "UI.h"
 #include <sstream>
 #include <iomanip>
+
+extern UI ui;
 
 using namespace std;
 
@@ -17,7 +20,13 @@ Customer::Customer(const string &id, const string &uname, const string &pwd,
 void Customer::displayInfo() const
 {
     User::displayInfo();
-    cout << "Diem tich luy: " << loyaltyPoints << endl;
+    ui.printRow("          | Diem tich luy: ", to_string(loyaltyPoints) + " diem");
+    ui.printHorizontalLine('+', '-', '+');
+}
+
+void Customer::displayTableRow() const
+{
+    User::displayTableRow();
 }
 
 string Customer::toFileString() const

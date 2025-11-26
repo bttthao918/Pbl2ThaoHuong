@@ -1,14 +1,16 @@
 #include "PricingConfig.h"
+#include "UI.h"
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+using namespace std;
 
-// Initialize static member
+extern UI ui;
+
 PricingConfig *PricingConfig::instance = nullptr;
 
 PricingConfig::PricingConfig()
 {
-    // Giá mặc định
     motorcyclePricePerHour = 5000.0;
     carStandardPricePerHour = 15000.0;
     carLuxuryPricePerHour = 20000.0;
@@ -89,10 +91,9 @@ double PricingConfig::getPricePerHour(VehicleType type, bool isLuxury) const
 
 void PricingConfig::loadFromFile()
 {
-    std::ifstream file(PRICING_FILE);
+    ifstream file(PRICING_FILE);
     if (!file.is_open())
     {
-        // File chưa tồn tại, sử dụng giá mặc định
         saveToFile();
         return;
     }
@@ -108,29 +109,38 @@ void PricingConfig::loadFromFile()
 
 void PricingConfig::saveToFile()
 {
-    std::ofstream file(PRICING_FILE);
+    ofstream file(PRICING_FILE);
     if (!file.is_open())
     {
-        throw std::runtime_error("Khong the luu file pricing.txt");
+        throw runtime_error("Khong the luu file pricing.txt");
     }
 
-    file << motorcyclePricePerHour << std::endl;
-    file << carStandardPricePerHour << std::endl;
-    file << carLuxuryPricePerHour << std::endl;
-    file << electricBikePricePerHour << std::endl;
-    file << minimumMinutes << std::endl;
+    file << motorcyclePricePerHour << endl;
+    file << carStandardPricePerHour << endl;
+    file << carLuxuryPricePerHour << endl;
+    file << electricBikePricePerHour << endl;
+    file << minimumMinutes << endl;
 
     file.close();
 }
 
 void PricingConfig::displayPricing() const
 {
-    std::cout << "\n========== BANG GIA GUI XE ==========\n";
-    std::cout << std::fixed << std::setprecision(0);
-    std::cout << "1. Xe may:           " << motorcyclePricePerHour << " VND/gio\n";
-    std::cout << "2. O to thuong:      " << carStandardPricePerHour << " VND/gio\n";
-    std::cout << "3. O to sang:        " << carLuxuryPricePerHour << " VND/gio\n";
-    std::cout << "4. Xe dap dien:      " << electricBikePricePerHour << " VND/gio\n";
-    std::cout << "\nThoi gian toi thieu: " << minimumMinutes << " phut\n";
-    std::cout << "======================================\n";
+    cout << endl;
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printEmptyLine();
+    ui.printCenteredText("BANG GIA GUI XE", Color::CYAN);
+    ui.printEmptyLine();
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printEmptyLine();
+
+    cout << fixed << setprecision(0);
+    ui.printRow("          |  1. Xe may:         ", to_string((int)motorcyclePricePerHour) + " VND/gio");
+    ui.printRow("          |  2. O to thuong:    ", to_string((int)carStandardPricePerHour) + " VND/gio");
+    ui.printRow("          |  3. O to sang:      ", to_string((int)carLuxuryPricePerHour) + " VND/gio");
+    ui.printRow("          |  4. Xe dap dien:    ", to_string((int)electricBikePricePerHour) + " VND/gio");
+    ui.printEmptyLine();
+    ui.printRow("          |  Thoi gian toi thieu: ", to_string(minimumMinutes) + " phut");
+    ui.printEmptyLine();
+    ui.printHorizontalLine('+', '-', '+');
 }

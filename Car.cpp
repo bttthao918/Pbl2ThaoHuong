@@ -1,7 +1,11 @@
 #include "Car.h"
 #include "PricingConfig.h"
+#include "UI.h"
 #include <sstream>
+#include <iomanip>
 using namespace std;
+
+extern UI ui;
 
 Car::Car() : Vehicle(), seatCount(0), isLuxury(false)
 {
@@ -14,11 +18,32 @@ Car::Car(const string &id, const string &plate, const string &custId,
     : Vehicle(id, plate, custId, VehicleType::CAR, br, mod, col),
       seatCount(seats), isLuxury(luxury) {}
 
+void Car::setSeatCount(int count)
+{
+    seatCount = count;
+}
+
+void Car::setIsLuxury(bool luxury)
+{
+    isLuxury = luxury;
+}
+
+int Car::getSeatCount() const
+{
+    return seatCount;
+}
+
+bool Car::getIsLuxury() const
+{
+    return isLuxury;
+}
+
 void Car::displayInfo() const
 {
     Vehicle::displayInfo();
-    cout << "So cho: " << seatCount << endl;
-    cout << "Xe sang: " << (isLuxury ? "Co" : "Khong") << endl;
+    ui.printRow("          | So cho: ", to_string(seatCount));
+    ui.printRow("          | Xe sang: ", isLuxury ? "Co" : "Khong");
+    ui.printHorizontalLine('+', '-', '+');
 }
 
 double Car::calculateParkingFee(long long minutes) const

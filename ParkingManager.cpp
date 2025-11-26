@@ -1,4 +1,5 @@
 #include "ParkingManager.h"
+#include "UI.h"
 #include "Utils.h"
 #include "Exceptions.h"
 #include "PricingConfig.h"
@@ -8,6 +9,8 @@
 #include <iomanip>
 #include <limits>
 using namespace std;
+
+extern UI ui;
 
 ParkingManager::ParkingManager() : currentUser(nullptr)
 {
@@ -22,7 +25,8 @@ ParkingManager::~ParkingManager()
 // ========== User Management ==========
 bool ParkingManager::registerUser(const string &username, const string &password,
                                   const string &fullName, const string &phone,
-                                  const string &email, UserRole role)
+                                  const string &email, UserRole role,
+                                  const string &employeeID) // Thêm tham số này
 {
     // Check if username already exists
     auto existing = users.find([&](const shared_ptr<User> &u)
@@ -45,7 +49,11 @@ bool ParkingManager::registerUser(const string &username, const string &password
         }
         else
         {
-            string employeeID = "EMP" + userId.substr(3);
+            // Sử dụng employeeID được truyền vào thay vì tự tạo
+            if (employeeID.empty())
+            {
+                throw invalid_argument("Ma nhan vien khong duoc de trong");
+            }
 
             newUser = make_shared<Admin>(userId, username, password,
                                          fullName, phone, email, employeeID);
@@ -140,7 +148,7 @@ bool ParkingManager::addCustomer(const string &username, const string &password,
         users.pushBack(newCustomer);
         saveUsers();
 
-        cout << "✓ Da tao Customer ID: " << userId << endl;
+        ui.showInfoMessage("Da tao Customer ID: " + userId);
         return true;
     }
     catch (const exception &e)
@@ -284,7 +292,7 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
         saveVehicles();
 
         // In ra Vehicle ID để khách hàng biết
-        cout << "Da tao Vehicle ID: " << vehicleId << endl;
+        ui.showInfoMessage("Da tao Vehicle ID: " + vehicleId);
 
         return true;
     }
@@ -518,61 +526,89 @@ bool ParkingManager::confirmBooking(const string &bookingId)
     }
 }
 
+// ...existing code...
 void ParkingManager::cancelBooking()
 {
     // Lấy tất cả booking
     auto allBookings = getAllBookings();
     if (allBookings.empty())
     {
-        cout << "Khong có don dat cho nao.\n";
+        ui.showInfoMessage("Khong co don dat cho nao.");
         return;
     }
 
     // Hiển thị danh sách booking
-    cout << "Danh sach tat ca don dat cho:\n";
+    ui.showReportHeader("DANH SACH DON DAT CHO");
     for (const auto &booking : allBookings)
     {
-        cout << "-------------------------\n";
         booking.displayInfo();
     }
 
     // Người dùng nhập ID
-    cout << "\nNhap ID don dat cho ban muon huy: ";
-    string bookingId;
-    cin >> bookingId;
+    string bookingId = ui.inputBoxString("Nhap Booking ID can huy: ");
 
     Booking *booking = getBooking(bookingId);
     if (!booking)
     {
-        cout << "Khong tim thay don dat cho voi ID: " << bookingId << endl;
+        ui.showErrorMessage("Khong tim thay don dat cho voi ID: " + bookingId);
         return;
     }
 
-    // Hiển thị chi tiết booking để xác nhận
-    cout << "\nThông tin booking bạn chọn:\n";
+    // Chặn hủy khi trạng thái không hợp lệ
+    if (booking->getStatus() == BookingStatus::CANCELLED)
+    {
+        ui.showErrorMessage("Don dat cho da bi huy truoc do.");
+        return;
+    }
+    if (booking->getStatus() == BookingStatus::COMPLETED)
+    {
+        ui.showErrorMessage("Don dat cho da hoan thanh, khong the huy.");
+        return;
+    }
+    // Nếu booking đã liên kết ticket (xe da check-in), không cho hủy
+    if (!booking->getTicketId().empty())
+    {
+        ui.showErrorMessage("Don dat cho da co ticket lien quan, khong the huy.");
+        return;
+    }
+
+    // Hiển thị chi tiết để xác nhận
+    ui.showReportHeader("THONG TIN DON DAT CHO:");
     booking->displayInfo();
 
     // Xác nhận
-    cout << "\nBạn có chắc chắn muốn hủy booking này? (y/n): ";
-    char choice;
-    cin >> choice;
+    string choice = ui.inputBoxString("Ban co chac muon huy don dat cho nay? (y/n): ");
 
-    if (choice == 'y' || choice == 'Y')
+    if (choice == "y" || choice == "Y")
     {
         try
         {
+            // Thực hiện hủy trạng thái booking
             booking->cancel();
             saveBookings();
-            cout << "Hủy booking thành công.\n";
+
+            // Nếu booking giữ 1 slot ở trạng thái RESERVED thì giải phóng slot
+            string slotId = booking->getSlotId();
+            if (!slotId.empty())
+            {
+                ParkingSlot *slot = getParkingSlot(slotId);
+                if (slot && slot->getStatus() == SlotStatus::RESERVED)
+                {
+                    slot->setStatus(SlotStatus::AVAILABLE);
+                    saveSlots();
+                }
+            }
+
+            ui.showSuccessMessage("Huy don dat cho thanh cong.");
         }
         catch (const exception &e)
         {
-            cout << "Lỗi khi hủy booking: " << e.what() << endl;
+            ui.showErrorMessage("Loi khi huy don dat cho: " + string(e.what()));
         }
     }
     else
     {
-        cout << "Đã hủy thao tác.\n";
+        ui.showInfoMessage("Da huy thao tac.");
     }
 }
 
@@ -583,45 +619,63 @@ ParkingSlot *ParkingManager::findAvailableSlot(VehicleType type)
                              { return s.isAvailable() && s.canAccommodate(type); });
 }
 
-string ParkingManager::checkIn(const string &customerId, const string &vehicleId,
-                               const string &bookingId)
+string ParkingManager::checkIn(const string &customerId, const string &vehicleId, const string &bookingId, const string &slotId)
 {
-    // Verify customer and vehicle
     Customer *customer = getCustomer(customerId);
     auto vehicle = getVehicle(vehicleId);
-
     if (!customer || !vehicle)
     {
         throw NotFoundException("Khach hang hoac xe khong ton tai");
     }
 
-    // Find available slot
-    ParkingSlot *slot = findAvailableSlot(vehicle->getType());
-    if (!slot)
-    {
-        throw NotFoundException("Khong con cho do");
-    }
+    ParkingSlot *slot = nullptr;
 
-    // Create ticket
-    string ticketId = generateTicketId();
-    ParkingTicket newTicket(ticketId, customerId, vehicleId, slot->getSlotId());
-
-    // If has booking, link it
     if (!bookingId.empty())
     {
         Booking *booking = getBooking(bookingId);
-        if (booking)
+        if (!booking || booking->getStatus() != BookingStatus::CONFIRMED)
         {
-            newTicket.setBookingId(bookingId);
-            booking->setTicketId(ticketId);
-            booking->complete();
-            saveBookings();
+            throw InvalidInputException("Booking khong hop le hoac chua xac nhan");
+        }
+        slot = getParkingSlot(booking->getSlotId());
+        if (!slot || (slot->getStatus() != SlotStatus::AVAILABLE && slot->getStatus() != SlotStatus::RESERVED))
+        {
+            throw InvalidInputException("Slot trong booking khong hop le");
+        }
+    }
+    else
+    {
+        if (!slotId.empty())
+        {
+            slot = getParkingSlot(slotId);
+            if (!slot || slot->getStatus() != SlotStatus::AVAILABLE || !slot->canAccommodate(vehicle->getType()))
+            {
+                throw InvalidInputException("Slot khong hop le hoac da duoc su dung");
+            }
+        }
+        else
+        {
+            slot = findAvailableSlot(vehicle->getType());
+            if (!slot)
+            {
+                throw NotFoundException("Khong con cho do");
+            }
         }
     }
 
-    // Occupy slot
-    slot->occupy(ticketId);
+    string ticketId = generateTicketId();
+    ParkingTicket newTicket(ticketId, customerId, vehicleId, slot->getSlotId());
 
+    if (!bookingId.empty())
+    {
+        Booking *booking = getBooking(bookingId);
+        newTicket.setBookingId(bookingId);
+        booking->setTicketId(ticketId);
+        booking->complete();
+        saveBookings();
+    }
+
+    slot->occupy(ticketId);
     tickets.pushBack(newTicket);
     saveSlots();
     saveTickets();
@@ -717,209 +771,221 @@ void ParkingManager::displayTicketDetail(ParkingManager &manager, const string &
     ParkingTicket *ticket = manager.getTicket(ticketId);
     if (!ticket)
     {
-        cout << "Khong tim thay ticket!\n";
+        ui.showErrorMessage("Khong tim thay ve voi ID: " + ticketId);
         return;
     }
 
-    cout << "\n╔════════════════════════════════════════════╗\n";
-    cout << "║         THONG TIN CHI TIET VE             ║\n";
-    cout << "╚════════════════════════════════════════════╝\n\n";
+    cout << endl;
 
-    // Thông tin ticket
-    cout << "🎫 THONG TIN VE:\n";
-    cout << "   Ticket ID:      " << ticket->getTicketId() << "\n";
-    cout << "   Trang thai:     " << ParkingTicket::statusToString(ticket->getStatus()) << "\n";
+    // ===== HEADER =====
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printEmptyLine();
+    ui.printCenteredText("THONG TIN CHI TIET VE", Color::CYAN);
+    ui.printEmptyLine();
+    ui.printHorizontalLine('+', '-', '+');
 
-    // Thông tin khách hàng
-    cout << "\n👤 KHACH HANG:\n";
-    Customer *customer = manager.getCustomer(ticket->getCustomerId());
-    if (customer)
+    // ===== THONG TIN VE =====
+    ui.printRow("  Ticket ID:     ", ticket->getTicketId());
+    ui.printRow("  Trang thai:    ", ParkingTicket::statusToString(ticket->getStatus()));
+    ui.printHorizontalLine('+', '-', '+');
+
+    // ===== KHACH HANG =====
+    if (auto customer = manager.getCustomer(ticket->getCustomerId()))
     {
-        cout << "   ID:             " << customer->getUserId() << "\n";
-        cout << "   Ho ten:         " << customer->getFullName() << "\n";
-        cout << "   So dien thoai:  " << customer->getPhoneNumber() << "\n";
+        ui.printCenteredText("KHACH HANG", Color::CYAN);
+        ui.printRow("  ID:            ", customer->getUserId());
+        ui.printRow("  Ho ten:        ", customer->getFullName());
+        ui.printRow("  So dien thoai: ", customer->getPhoneNumber());
+        ui.printHorizontalLine('+', '-', '+');
     }
 
-    // Thông tin xe
-    cout << "\n🚗 THONG TIN XE:\n";
+    // ===== XE =====
+    if (auto vehicle = manager.getVehicle(ticket->getVehicleId()))
+    {
+        ui.printCenteredText("THONG TIN XE", Color::CYAN);
+        ui.printRow("  Bien so:       ", vehicle->getLicensePlate());
+        ui.printRow("  Loai xe:       ", vehicle->getTypeString());
+        ui.printRow("  Hang:          ", vehicle->getBrand() + " " + vehicle->getModel());
+        ui.printHorizontalLine('+', '-', '+');
+    }
+
+    // ===== CHO DO =====
+    if (auto slot = manager.getParkingSlot(ticket->getSlotId()))
+    {
+        ui.printCenteredText("VI TRI DO", Color::CYAN);
+        ui.printRow("  So vi tri:     ", slot->getSlotNumber());
+        ui.printRow("  Khu vuc:       ", slot->getSlotNumber().substr(0, 1));
+        ui.printHorizontalLine('+', '-', '+');
+    }
+
+    // ===== THOI GIAN =====
+    ui.printCenteredText("THOI GIAN", Color::CYAN);
+    ui.printRow("  Check-in:      ", Utils::timeToString(ticket->getCheckInTime()));
+
     auto vehicle = manager.getVehicle(ticket->getVehicleId());
-    if (vehicle)
-    {
-        cout << "   Bien so:        " << vehicle->getLicensePlate() << "\n";
-        cout << "   Loai xe:        " << vehicle->getTypeString() << "\n";
-        cout << "   Hang:           " << vehicle->getBrand() << " " << vehicle->getModel() << "\n";
-    }
-
-    // Thông tin chỗ đỗ
-    cout << "\n🅿 VI TRI DO:\n";
-    auto slot = manager.getParkingSlot(ticket->getSlotId());
-    if (slot)
-    {
-        cout << "   So vi tri:      " << slot->getSlotNumber() << "\n";
-        cout << "   Khu vuc:        " << slot->getSlotNumber().substr(0, 1) << "\n";
-    }
-
-    // Thông tin booking (nếu có)
-    if (!ticket->getBookingId().empty())
-    {
-        cout << "\n📅 BOOKING:\n";
-        Booking *booking = manager.getBooking(ticket->getBookingId());
-        if (booking)
-        {
-            cout << "   Booking ID:     " << booking->getBookingId() << "\n";
-            cout << "   Thoi gian dat:  " << Utils::timeToString(booking->getBookingTime()) << "\n";
-        }
-    }
-
-    // Thông tin thời gian và phí
-    cout << "\n⏰ THOI GIAN:\n";
-    cout << "   Check-in:       " << Utils::timeToString(ticket->getCheckInTime()) << "\n";
 
     if (ticket->getStatus() == TicketStatus::ACTIVE)
     {
-        long long currentDuration = ticket->getParkingDuration();
-        cout << "   Thoi gian gui:  " << currentDuration << " phut (dang tinh...)\n";
+        long long mins = ticket->getParkingDuration();
+        ui.printRow("  Thoi gian gui: ", to_string(mins) + " phut (dang tinh...)");
 
-        // Tính phí dự kiến
         if (vehicle)
         {
-            double estimatedFee = vehicle->calculateParkingFee(currentDuration);
-            cout << "   Phi du kien:    ~" << fixed << setprecision(0)
-                 << estimatedFee << " VND\n";
+            double fee = vehicle->calculateParkingFee(mins);
+            ostringstream oss;
+            oss << fixed << setprecision(0) << "~" << fee << " VND";
+            ui.printRow("  Phi du kien:   ", oss.str());
         }
     }
     else if (ticket->getStatus() == TicketStatus::PAID)
     {
-        cout << "   Check-out:      " << Utils::timeToString(ticket->getCheckOutTime()) << "\n";
-        cout << "   Thoi gian gui:  " << ticket->getParkingDuration() << " phut\n";
-        cout << "\n💰 PHI:\n";
-        cout << "   Tong cong:      " << fixed << setprecision(0)
-             << ticket->getFee() << " VND\n";
+        ui.printRow("  Check-out:     ", Utils::timeToString(ticket->getCheckOutTime()));
+        ui.printRow("  Thoi gian gui: ", to_string(ticket->getParkingDuration()) + " phut");
+
+        ui.printHorizontalLine('+', '-', '+');
+        ui.printCenteredText("PHI GUI XE", Color::CYAN);
+
+        ostringstream oss;
+        oss << fixed << setprecision(0) << ticket->getFee() << " VND";
+        ui.printRow("  Tong cong:     ", oss.str());
     }
 
-    cout << "\n════════════════════════════════════════════\n";
+    ui.printHorizontalLine('+', '-', '+');
 }
 
 void ParkingManager::advancedTicketSearch(ParkingManager &manager)
 {
-    Utils::clearScreen();
-    cout << "1. Tim theo ID ve xe\n";
-    cout << "2. Tim theo bien so xe\n";
-    cout << "3. Tim theo ID khach hang\n";
-    cout << "0. Tim theo trang thai\n";
-    cout << "0. Quay lai\n";
-
-    int choice;
-    cout << "\nNhap lua chon: ";
-    cin >> choice;
-    cin.ignore();
-
-    DoubleLinkedList<ParkingTicket> results;
-
-    switch (choice)
+    while (true)
     {
-    case 1:
-    {
-        string ticketId;
-        cout << "Nhap Ticket ID: ";
-        getline(cin, ticketId);
+        Utils::clearScreen();
+        ui.showTicketSearchMenu();
 
-        displayTicketDetail(manager, ticketId);
-        Utils::pause();
-        return;
-    }
-    case 2:
-    {
-        string plate;
-        cout << "Nhap bien so xe: ";
-        getline(cin, plate);
-
-        auto vehicle = manager.getVehicleByPlate(plate);
-        if (vehicle)
+        int choice = ui.inputBoxInt("Nhap lua chon: ");
+        if (choice > 4)
         {
-            results = manager.getTicketsByVehicle(vehicle->getVehicleId());
+            ui.showErrorMessage("Lua chon khong hop le. Vui long thu lai.");
+            continue;
         }
-        break;
-    }
-    case 3:
-    {
-        string customerId;
-        cout << "Nhap Customer ID: ";
-        getline(cin, customerId);
 
-        results = manager.getTicketsByCustomer(customerId);
-        break;
-    }
-    case 4:
-    {
-        cout << "Chon trang thai:\n";
-        cout << "1. ACTIVE (dang gui)\n";
-        cout << "2. PAID (da thanh toan)\n";
-        cout << "3. CANCELLED (da huy)\n";
+        DoubleLinkedList<ParkingTicket> results;
 
-        int statusChoice;
-        cin >> statusChoice;
-        cin.ignore();
-
-        TicketStatus status;
-        switch (statusChoice)
+        switch (choice)
         {
         case 1:
-            status = TicketStatus::ACTIVE;
-            break;
+        {
+            Utils::clearScreen();
+            string ticketId = ui.inputBoxString("Nhap Ticket ID: ");
+            displayTicketDetail(manager, ticketId);
+            Utils::pause();
+            continue;
+        }
         case 2:
-            status = TicketStatus::PAID;
+        {
+            Utils::clearScreen();
+            string plate = ui.inputBoxString("Nhap bien so xe: ");
+
+            auto vehicle = manager.getVehicleByPlate(plate);
+            if (!vehicle)
+            {
+                ui.showErrorMessage("Khong tim thay xe voi bien so: " + plate);
+                Utils::pause();
+                continue;
+            }
+
+            results = manager.getTicketsByVehicle(vehicle->getVehicleId());
             break;
+        }
         case 3:
-            status = TicketStatus::CANCELLED;
+        {
+            Utils::clearScreen();
+            string customerId = ui.inputBoxString("Nhap Customer ID: ");
+
+            if (!manager.getCustomer(customerId))
+            {
+                ui.showErrorMessage("Khong tim thay khach hang voi ID: " + customerId);
+                Utils::pause();
+                continue;
+            }
+
+            results = manager.getTicketsByCustomer(customerId);
             break;
-        default:
+        }
+        case 4:
+        {
+            Utils::clearScreen();
+            ui.showStatusSelectMenu();
+            int statusChoice = ui.inputBoxInt("Nhap lua chon: ");
+
+            TicketStatus status;
+            switch (statusChoice)
+            {
+            case 1:
+                status = TicketStatus::ACTIVE;
+                break;
+            case 2:
+                status = TicketStatus::PAID;
+                break;
+            case 3:
+                status = TicketStatus::CANCELLED;
+                break;
+            default:
+                ui.showErrorMessage("Lua chon trang thai khong hop le.");
+                Utils::pause();
+                continue;
+            }
+
+            results = manager.getTicketsByStatus(status);
+            if (results.empty())
+            {
+                ui.showErrorMessage("Khong tim thay ve voi trang thai duoc chon.");
+                Utils::pause();
+                continue;
+            }
+            break;
+        }
+        case 0:
             return;
         }
 
-        results = manager.getTicketsByStatus(status);
-        break;
-    }
-    default:
-        return;
-    }
+        // Hiển thị kết quả
+        ui.showReportHeader("KET QUA TIM KIEM");
+        ui.showInfoMessage("Tim thay: " + to_string(results.size()) + " ve\n\n");
 
-    // Hiển thị kết quả
-    cout << "\n========== KET QUA TIM KIEM ==========\n";
-    cout << "Tim thay: " << results.size() << " ve\n\n";
-
-    if (results.empty())
-    {
-        cout << "Khong co ket qua.\n";
-    }
-    else
-    {
-        int count = 1;
-        for (auto it = results.begin(); it != results.end(); ++it)
+        if (results.empty())
         {
-            cout << count++ << ". ";
-            cout << "ID: " << it->getTicketId();
-
-            auto vehicle = manager.getVehicle(it->getVehicleId());
-            if (vehicle)
+            ui.showErrorMessage("Khong co ket qua.\n");
+        }
+        else
+        {
+            int count = 1;
+            ui.printHorizontalLine('+', '-', '+');
+            for (auto &t : results)
             {
-                cout << " | Bien so: " << vehicle->getLicensePlate();
+                ostringstream val;
+                // Ticket id + các thông tin bổ sung
+                val << t.getTicketId();
+
+                auto vehicle = manager.getVehicle(t.getVehicleId());
+                if (vehicle)
+                    val << " | Bien so: " << vehicle->getLicensePlate();
+
+                val << " | " << Utils::timeToString(t.getCheckInTime());
+                val << " | " << ParkingTicket::statusToString(t.getStatus());
+
+                if (t.getStatus() == TicketStatus::PAID)
+                {
+                    ostringstream feeStr;
+                    feeStr << fixed << setprecision(0) << t.getFee() << " VND";
+                    val << " | " << feeStr.str();
+                }
+
+                ui.printRow("          |  " + to_string(count++) + ". ID: ", val.str());
             }
 
-            cout << " | " << Utils::timeToString(it->getCheckInTime());
-            cout << " | " << ParkingTicket::statusToString(it->getStatus());
-
-            if (it->getStatus() == TicketStatus::PAID)
-            {
-                cout << " | " << fixed << setprecision(0)
-                     << it->getFee() << " VND";
-            }
-
-            cout << "\n";
+            ui.printHorizontalLine('+', '-', '+');
+            Utils::pause();
         }
     }
-
-    Utils::pause();
 }
 
 void ParkingManager::adminPriceManagement(ParkingManager &manager)
@@ -929,25 +995,16 @@ void ParkingManager::adminPriceManagement(ParkingManager &manager)
     while (true)
     {
         Utils::clearScreen();
-        cout << "========== QUAN LY GIA VE ==========\n";
+        ui.showReportHeader("QUAN LY GIA VE");
 
         // Hiển thị bảng giá hiện tại
         pricing->displayPricing();
 
-        cout << "\n1. Thay doi gia xe may\n";
-        cout << "2. Thay doi gia o to thuong\n";
-        cout << "3. Thay doi gia o to sang\n";
-        cout << "4. Thay doi gia xe dap dien\n";
-        cout << "5. Thay doi thoi gian toi thieu\n";
-        cout << "0. Quay lai\n";
-
-        int choice;
-        cout << "\nNhap lua chon: ";
-        cin >> choice;
-        cin.ignore();
+        ui.showPriceChangeMenu();
+        int choice = ui.inputBoxInt("Nhap lua chon: ");
 
         if (choice == 0)
-            break;
+            return;
 
         try
         {
@@ -957,52 +1014,42 @@ void ParkingManager::adminPriceManagement(ParkingManager &manager)
             switch (choice)
             {
             case 1:
-                cout << "Nhap gia moi cho xe may (VND/gio): ";
-                cin >> newPrice;
-                cin.ignore();
+                newPrice = ui.inputBoxDouble("Nhap gia moi cho xe may (VND/gio): ");
                 pricing->setMotorcyclePrice(newPrice);
-                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                ui.showSuccessMessage("Cap nhat gia thanh cong!");
                 break;
 
             case 2:
-                cout << "Nhap gia moi cho o to thuong (VND/gio): ";
-                cin >> newPrice;
-                cin.ignore();
+                newPrice = ui.inputBoxDouble("Nhap gia moi cho o to thuong (VND/gio): ");
                 pricing->setCarStandardPrice(newPrice);
-                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                ui.showSuccessMessage("Cap nhat gia thanh cong!");
                 break;
 
             case 3:
-                cout << "Nhap gia moi cho o to sang (VND/gio): ";
-                cin >> newPrice;
-                cin.ignore();
+                newPrice = ui.inputBoxDouble("Nhap gia moi cho o to sang (VND/gio): ");
                 pricing->setCarLuxuryPrice(newPrice);
-                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                ui.showSuccessMessage("Cap nhat gia thanh cong!");
                 break;
 
             case 4:
-                cout << "Nhap gia moi cho xe dap dien (VND/gio): ";
-                cin >> newPrice;
-                cin.ignore();
+                newPrice = ui.inputBoxDouble("Nhap gia moi cho xe dap dien (VND/gio): ");
                 pricing->setElectricBikePrice(newPrice);
-                cout << "\n✓ Cap nhat gia thanh cong!\n";
+                ui.showSuccessMessage("Cap nhat gia thanh cong!");
                 break;
 
             case 5:
-                cout << "Nhap thoi gian toi thieu moi (phut): ";
-                cin >> newMinutes;
-                cin.ignore();
+                newMinutes = ui.inputBoxInt("Nhap thoi gian toi thieu moi (phut): ");
                 pricing->setMinimumMinutes(newMinutes);
-                cout << "\n✓ Cap nhat thanh cong!\n";
+                ui.showSuccessMessage("Cap nhat gia thanh cong!");
                 break;
 
             default:
-                cout << "Lua chon khong hop le!\n";
+                ui.showErrorMessage("Lua chon khong hop le!");
             }
         }
         catch (const exception &e)
         {
-            cout << "Loi: " << e.what() << endl;
+            ui.showErrorMessage(string("Loi: ") + e.what());
         }
         Utils::pause();
     }
@@ -1014,10 +1061,13 @@ void ParkingManager::customerViewPricing()
     PricingConfig *pricing = PricingConfig::getInstance();
     pricing->displayPricing();
 
-    cout << "\nLUU Y:\n";
-    cout << "- Phi duoc tinh theo gio, lam tron len\n";
-    cout << "- Thoi gian toi thieu: " << pricing->getMinimumMinutes() << " phut\n";
-    cout << "- Vi du: Gui 45 phut = 1 gio\n";
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          | ", "                                    LUU Y                                          ");
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          | ", " - Phi duoc tinh theo gio, lam tron len                                            ");
+    ui.printRow("          | ", " - Thoi gian toi thieu: " + to_string(pricing->getMinimumMinutes()) + " phut");
+    ui.printRow("          | ", " - Vi du: Gui 45 phut = 1 gio                                                      ");
+    ui.printHorizontalLine('+', '-', '+');
 }
 
 // ========== Search & Filter ==========
@@ -1124,25 +1174,72 @@ double ParkingManager::getRevenueByPeriod(time_t startTime, time_t endTime) cons
 
 void ParkingManager::generateDailyReport() const
 {
-    cout << "\n========== BAO CAO NGAY " << Utils::getCurrentDateTime() << " ==========\n";
+    int boxWidth = 90;
+    int leftPadding = 10;
+
+    auto printLine = [&](char left, char mid, char right)
+    {
+        cout << string(leftPadding, ' ') << left;
+        for (int i = 0; i < boxWidth - 2; i++)
+            cout << mid;
+        cout << right << endl;
+    };
+
+    auto printEmpty = [&]()
+    {
+        cout << string(leftPadding, ' ') << "|" << string(boxWidth - 2, ' ') << "|" << endl;
+    };
+
+    auto printCenter = [&](const string &text, bool cyan = false)
+    {
+        int pad = (boxWidth - 2 - text.length()) / 2;
+        int padR = boxWidth - 2 - text.length() - pad;
+        cout << string(leftPadding, ' ') << "|" << string(pad, ' ');
+        if (cyan)
+            cout << "\033[36m";
+        cout << text;
+        if (cyan)
+            cout << "\033[0m";
+        cout << string(padR, ' ') << "|" << endl;
+    };
+
+    auto printLeft = [&](const string &label, const string &value)
+    {
+        string content = label + value;
+        int padR = boxWidth - 3 - content.length();
+        if (padR < 0)
+            padR = 0;
+        cout << string(leftPadding, ' ') << "| " << content << string(padR, ' ') << "|" << endl;
+    };
+
+    cout << endl;
+    printLine('+', '-', '+');
+    printEmpty();
+    printCenter("BAO CAO NGAY " + Utils::getCurrentDateTime(), true);
+    printEmpty();
+    printLine('+', '-', '+');
 
     // Slot statistics
-    cout << "\n1. THONG KE CHO DO:\n";
-    cout << "   - Tong so cho: " << getTotalSlots() << endl;
-    cout << "   - Dang su dung: " << getOccupiedSlotCount() << endl;
-    cout << "   - Con trong (Xe may): " << getAvailableSlotCount(VehicleType::MOTORCYCLE) << endl;
-    cout << "   - Con trong (O to): " << getAvailableSlotCount(VehicleType::CAR) << endl;
-    cout << "   - Con trong (Xe dap dien): " << getAvailableSlotCount(VehicleType::ELECTRIC_BIKE) << endl;
+    printCenter("THONG KE CHO DO", true);
+    printLeft("  Tong so cho:         ", to_string(getTotalSlots()));
+    printLeft("  Dang su dung:        ", to_string(getOccupiedSlotCount()));
+    printLeft("  Trong (Xe may):      ", to_string(getAvailableSlotCount(VehicleType::MOTORCYCLE)));
+    printLeft("  Trong (O to):        ", to_string(getAvailableSlotCount(VehicleType::CAR)));
+    printLeft("  Trong (Xe dap dien): ", to_string(getAvailableSlotCount(VehicleType::ELECTRIC_BIKE)));
+    printLine('+', '-', '+');
 
-    // Revenue statistics
+    // Revenue
     time_t now = time(nullptr);
-    time_t startOfDay = now - (now % 86400); // Start of current day
+    time_t startOfDay = now - (now % 86400);
     double dailyRevenue = getRevenueByPeriod(startOfDay, now);
 
-    cout << "\n2. DOANH THU:\n";
-    cout << "   - Doanh thu hom nay: " << fixed << setprecision(2)
-         << dailyRevenue << " VND" << endl;
-    cout << "   - Tong doanh thu: " << getTotalRevenue() << " VND" << endl;
+    printCenter("DOANH THU", true);
+    ostringstream oss1, oss2;
+    oss1 << fixed << setprecision(0) << dailyRevenue << " VND";
+    oss2 << fixed << setprecision(0) << getTotalRevenue() << " VND";
+    printLeft("  Hom nay:             ", oss1.str());
+    printLeft("  Tong doanh thu:      ", oss2.str());
+    printLine('+', '-', '+');
 
     // Active tickets
     int activeCount = 0;
@@ -1152,16 +1249,51 @@ void ParkingManager::generateDailyReport() const
             activeCount++;
     }
 
-    cout << "\n3. VE HIEN TAI:\n";
-    cout << "   - So ve dang hoat dong: " << activeCount << endl;
-    cout << "   - Tong so ve da tao: " << tickets.size() << endl;
-
-    cout << "\n=======================================================\n";
+    printCenter("VE HIEN TAI", true);
+    printLeft("  Dang hoat dong:      ", to_string(activeCount));
+    printLeft("  Tong da tao:         ", to_string(tickets.size()));
+    printLine('+', '-', '+');
 }
 
 void ParkingManager::generateMonthlyReport() const
 {
-    cout << "\n========== BAO CAO THANG ==========\n";
+    int boxWidth = 90;
+    int leftPadding = 10;
+
+    auto printLine = [&](char left, char mid, char right)
+    {
+        cout << string(leftPadding, ' ') << left;
+        for (int i = 0; i < boxWidth - 2; i++)
+            cout << mid;
+        cout << right << endl;
+    };
+
+    auto printEmpty = [&]()
+    {
+        cout << string(leftPadding, ' ') << "|" << string(boxWidth - 2, ' ') << "|" << endl;
+    };
+
+    auto printCenter = [&](const string &text, bool cyan = false)
+    {
+        int pad = (boxWidth - 2 - text.length()) / 2;
+        int padR = boxWidth - 2 - text.length() - pad;
+        cout << string(leftPadding, ' ') << "|" << string(pad, ' ');
+        if (cyan)
+            cout << "\033[36m";
+        cout << text;
+        if (cyan)
+            cout << "\033[0m";
+        cout << string(padR, ' ') << "|" << endl;
+    };
+
+    auto printLeft = [&](const string &label, const string &value)
+    {
+        string content = label + value;
+        int padR = boxWidth - 3 - content.length();
+        if (padR < 0)
+            padR = 0;
+        cout << string(leftPadding, ' ') << "| " << content << string(padR, ' ') << "|" << endl;
+    };
 
     time_t now = time(nullptr);
     struct tm *timeinfo = localtime(&now);
@@ -1173,8 +1305,17 @@ void ParkingManager::generateMonthlyReport() const
 
     double monthlyRevenue = getRevenueByPeriod(startOfMonth, now);
 
-    cout << "Doanh thu thang nay: " << fixed << setprecision(2)
-         << monthlyRevenue << " VND" << endl;
+    cout << endl;
+    printLine('+', '-', '+');
+    printEmpty();
+    printCenter("BAO CAO THANG", true);
+    printEmpty();
+    printLine('+', '-', '+');
+
+    ostringstream oss;
+    oss << fixed << setprecision(0) << monthlyRevenue << " VND";
+    printLeft("  Doanh thu thang nay: ", oss.str());
+    printLine('+', '-', '+');
 
     // Count tickets by type
     int motorcycleTickets = 0, carTickets = 0, electricBikeTickets = 0;
@@ -1202,12 +1343,11 @@ void ParkingManager::generateMonthlyReport() const
         }
     }
 
-    cout << "\nThong ke theo loai xe:\n";
-    cout << "   - Xe may: " << motorcycleTickets << " luot\n";
-    cout << "   - O to: " << carTickets << " luot\n";
-    cout << "   - Xe dap dien: " << electricBikeTickets << " luot\n";
-
-    cout << "\n====================================\n";
+    printCenter("THONG KE THEO LOAI XE", true);
+    printLeft("  Xe may:              ", to_string(motorcycleTickets) + " luot");
+    printLeft("  O to:                ", to_string(carTickets) + " luot");
+    printLeft("  Xe dap dien:         ", to_string(electricBikeTickets) + " luot");
+    printLine('+', '-', '+');
 }
 
 // ========== File Operations ==========

@@ -1,11 +1,16 @@
 #include "ParkingSlot.h"
 #include "Exceptions.h"
+#include "UI.h"
 #include <sstream>
+#include <iomanip>
+using namespace std;
+
+extern UI ui;
 
 ParkingSlot::ParkingSlot() : status(SlotStatus::AVAILABLE),
                              suitableFor(VehicleType::MOTORCYCLE) {}
 
-ParkingSlot::ParkingSlot(const std::string &id, const std::string &number, VehicleType type)
+ParkingSlot::ParkingSlot(const string &id, const string &number, VehicleType type)
     : slotId(id), slotNumber(number), suitableFor(type),
       status(SlotStatus::AVAILABLE), currentTicketId("") {}
 
@@ -20,7 +25,7 @@ bool ParkingSlot::canAccommodate(VehicleType type) const
     return suitableFor != VehicleType::CAR;
 }
 
-void ParkingSlot::occupy(const std::string &ticketId)
+void ParkingSlot::occupy(const string &ticketId)
 {
     if (status != SlotStatus::AVAILABLE && status != SlotStatus::RESERVED)
     {
@@ -57,40 +62,52 @@ void ParkingSlot::setMaintenance()
 
 void ParkingSlot::displayInfo() const
 {
-    std::cout << "Slot ID: " << slotId << std::endl;
-    std::cout << "So vi tri: " << slotNumber << std::endl;
-    std::cout << "Loai xe: " << Vehicle::vehicleTypeToString(suitableFor) << std::endl;
-    std::cout << "Trang thai: " << statusToString(status) << std::endl;
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          | Slot ID:        ", slotId);
+    ui.printRow("          | So vi tri:      ", slotNumber);
+    ui.printRow("          | Loai xe:        ", Vehicle::vehicleTypeToString(suitableFor));
+    ui.printRow("          | Trang thai:     ", statusToString(status));
     if (!currentTicketId.empty())
     {
-        std::cout << "Ticket hien tai: " << currentTicketId << std::endl;
+        ui.printRow("          | Ticket hien tai: ", currentTicketId);
     }
+    ui.printHorizontalLine('+', '-', '+');
 }
 
-std::string ParkingSlot::toFileString() const
+void ParkingSlot::displayTableRow() const
 {
-    std::ostringstream oss;
+    // int widths[] = {22, 26, 20, 17};
+    cout << "          | " << setw(20) << left << slotId
+         << " | " << setw(24) << left << slotNumber
+         << " | " << setw(18) << left << Vehicle::vehicleTypeToString(suitableFor)
+         << " | " << setw(15) << left << statusToString(status)
+         << " |" << endl;
+}
+
+string ParkingSlot::toFileString() const
+{
+    ostringstream oss;
     oss << slotId << "|" << slotNumber << "|"
         << Vehicle::vehicleTypeToString(suitableFor) << "|"
         << statusToString(status) << "|" << currentTicketId;
     return oss.str();
 }
 
-void ParkingSlot::fromFileString(const std::string &line)
+void ParkingSlot::fromFileString(const string &line)
 {
-    std::istringstream iss(line);
-    std::string typeStr, statusStr;
+    istringstream iss(line);
+    string typeStr, statusStr;
 
-    std::getline(iss, slotId, '|');
-    std::getline(iss, slotNumber, '|');
-    std::getline(iss, typeStr, '|');
+    getline(iss, slotId, '|');
+    getline(iss, slotNumber, '|');
+    getline(iss, typeStr, '|');
     suitableFor = Vehicle::stringToVehicleType(typeStr);
-    std::getline(iss, statusStr, '|');
+    getline(iss, statusStr, '|');
     status = stringToStatus(statusStr);
-    std::getline(iss, currentTicketId);
+    getline(iss, currentTicketId);
 }
 
-std::ostream &operator<<(std::ostream &os, const ParkingSlot &slot)
+ostream &operator<<(ostream &os, const ParkingSlot &slot)
 {
     os << "Slot " << slot.slotNumber << " (" << slot.statusToString(slot.status) << ")";
     return os;
@@ -101,7 +118,7 @@ bool ParkingSlot::operator==(const ParkingSlot &other) const
     return slotId == other.slotId;
 }
 
-std::string ParkingSlot::statusToString(SlotStatus status)
+string ParkingSlot::statusToString(SlotStatus status)
 {
     switch (status)
     {
@@ -118,7 +135,7 @@ std::string ParkingSlot::statusToString(SlotStatus status)
     }
 }
 
-SlotStatus ParkingSlot::stringToStatus(const std::string &str)
+SlotStatus ParkingSlot::stringToStatus(const string &str)
 {
     if (str == "AVAILABLE")
         return SlotStatus::AVAILABLE;

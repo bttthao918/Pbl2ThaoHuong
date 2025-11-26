@@ -1,9 +1,12 @@
 #include "Vehicle.h"
 #include "Exceptions.h"
 #include "Utils.h"
+#include "UI.h"
 #include <sstream>
 #include <iomanip>
 using namespace std;
+
+extern UI ui;
 
 Vehicle::Vehicle() : type(VehicleType::MOTORCYCLE) {}
 
@@ -79,12 +82,31 @@ void Vehicle::setLicensePlate(const string &plate)
 
 void Vehicle::displayInfo() const
 {
-    cout << "Vehicle ID: " << vehicleId << endl;
-    cout << "Bien so: " << licensePlate << endl;
-    cout << "Loai xe: " << getTypeString() << endl;
-    cout << "Hang: " << brand << endl;
-    cout << "Model: " << model << endl;
-    cout << "Mau: " << color << endl;
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          |    Vehicle ID: ", vehicleId);
+    ui.printRow("          |    Bien so:    ", licensePlate);
+    ui.printRow("          |    Loai xe:    ", getTypeString());
+    ui.printRow("          |    Hang:       ", brand + " " + model);
+    ui.printRow("          |    Mau sac:    ", color);
+    ui.printRow("          |    Customer ID:  ", customerId);
+    ui.printHorizontalLine('+', '-', '+');
+}
+
+void Vehicle::displayTableRow() const
+{
+    string brandModel = brand + " " + model;
+    if (brandModel.length() > 26)
+        brandModel = brandModel.substr(0, 23) + "...";
+
+    //  int widths[] = {16, 22, 19, 28};
+    // Format: "          |" + " content|" + " content|" ...
+
+    cout << "          |"
+         << " " << setw(15) << left << vehicleId << "|"
+         << " " << setw(21) << left << licensePlate << "|"
+         << " " << setw(18) << left << getTypeString() << "|"
+         << " " << setw(27) << left << brandModel << "|"
+         << endl;
 }
 
 string Vehicle::toFileString() const

@@ -1,5 +1,9 @@
 #include "Admin.h"
+#include "UI.h"
 #include <sstream>
+#include <iomanip>
+
+extern UI ui;
 
 using namespace std;
 
@@ -17,7 +21,13 @@ Admin::Admin(const string &id, const string &uname, const string &pwd,
 void Admin::displayInfo() const
 {
     User::displayInfo();
-    cout << "Ma nhan vien: " << employeeID << endl;
+    ui.printRow("          | Ma nhan vien: ", employeeID);
+    ui.printHorizontalLine('+', '-', '+');
+}
+
+void Admin::displayTableRow() const
+{
+    User::displayTableRow();
 }
 
 string Admin::toFileString() const
@@ -32,7 +42,6 @@ void Admin::fromFileString(const string &line)
     istringstream iss(line);
     string baseData;
 
-    // Đọc base user (7 phần)
     for (int i = 0; i < 7; i++)
     {
         string part;

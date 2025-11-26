@@ -4,7 +4,6 @@
 #include <string>
 #include <ctime>
 #include <iostream>
-using namespace std;
 
 enum class BookingStatus
 {
@@ -17,32 +16,32 @@ enum class BookingStatus
 class Booking
 {
 private:
-    string bookingId;
-    string customerId;
-    string vehicleId;
-    string slotId;
+    std::string bookingId;
+    std::string customerId;
+    std::string vehicleId;
+    std::string slotId;
     time_t bookingTime;
     time_t expectedArrival;
     BookingStatus status;
-    string ticketId;
+    std::string ticketId;
 
 public:
     Booking();
-    Booking(const string &id, const string &custId, const string &vehId, time_t arrival);
+    Booking(const std::string &id, const std::string &custId, const std::string &vehId, time_t arrival);
 
     // Getters
-    string getBookingId() const { return bookingId; }
-    string getCustomerId() const { return customerId; }
-    string getVehicleId() const { return vehicleId; }
-    string getSlotId() const { return slotId; }
+    std::string getBookingId() const { return bookingId; }
+    std::string getCustomerId() const { return customerId; }
+    std::string getVehicleId() const { return vehicleId; }
+    std::string getSlotId() const { return slotId; }
     time_t getBookingTime() const { return bookingTime; }
     time_t getExpectedArrival() const { return expectedArrival; }
     BookingStatus getStatus() const { return status; }
-    string getTicketId() const { return ticketId; }
+    std::string getTicketId() const { return ticketId; }
 
     // Setters
     void setStatus(BookingStatus s) { status = s; }
-    void setTicketId(const string &id) { ticketId = id; }
+    void setTicketId(const std::string &id) { ticketId = id; }
     void setSlotId(const std::string &id) { slotId = id; }
     void setExpectedArrival(time_t arrival) { expectedArrival = arrival; }
 
@@ -53,14 +52,15 @@ public:
     bool isExpired() const;
 
     void displayInfo() const;
-    string toFileString() const;
-    void fromFileString(const string &line);
+    void displayTableRow() const;
+    std::string toFileString() const;
+    void fromFileString(const std::string &line);
 
-    friend ostream &operator<<(ostream &os, const Booking &booking);
+    friend std::ostream &operator<<(std::ostream &os, const Booking &booking);
     bool operator==(const Booking &other) const;
 
-    static string statusToString(BookingStatus status);
-    static BookingStatus stringToStatus(const string &str);
+    static std::string statusToString(BookingStatus status);
+    static BookingStatus stringToStatus(const std::string &str);
 };
 
 #endif

@@ -1,7 +1,11 @@
 #include "ElectricBike.h"
 #include "PricingConfig.h"
+#include "UI.h"
 #include <sstream>
+#include <iomanip>
 using namespace std;
+
+extern UI ui;
 
 ElectricBike::ElectricBike() : Vehicle(), batteryCapacity(0), maxSpeed(0)
 {
@@ -14,11 +18,32 @@ ElectricBike::ElectricBike(const string &id, const string &plate, const string &
     : Vehicle(id, plate, custId, VehicleType::ELECTRIC_BIKE, br, mod, col),
       batteryCapacity(battery), maxSpeed(speed) {}
 
+void ElectricBike::setBatteryCapacity(int capacity)
+{
+    batteryCapacity = capacity;
+}
+
+void ElectricBike::setMaxSpeed(int speed)
+{
+    maxSpeed = speed;
+}
+
+int ElectricBike::getBatteryCapacity() const
+{
+    return batteryCapacity;
+}
+
+int ElectricBike::getMaxSpeed() const
+{
+    return maxSpeed;
+}
+
 void ElectricBike::displayInfo() const
 {
     Vehicle::displayInfo();
-    cout << "Dung luong pin: " << batteryCapacity << " mAh" << endl;
-    cout << "Toc do toi da: " << maxSpeed << " km/h" << endl;
+    ui.printRow("          | Dung luong pin: ", to_string(batteryCapacity) + " mAh");
+    ui.printRow("          | Toc do toi da: ", to_string(maxSpeed) + " km/h");
+    ui.printHorizontalLine('+', '-', '+');
 }
 
 double ElectricBike::calculateParkingFee(long long minutes) const

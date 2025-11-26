@@ -7,7 +7,6 @@
 #include <sstream>
 #include <iomanip>
 #include <limits>
-
 using namespace std;
 
 namespace Utils
@@ -27,28 +26,26 @@ namespace Utils
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
-    bool isValidPhoneNumber(const string &phone);
-    bool isValidEmail(const string &email);
-    bool isValidLicensePlate(const string &plate);
+    bool isValidPhoneNumber(const std::string &phone);
+    bool isValidEmail(const std::string &email);
+    bool isValidLicensePlate(const std::string &plate);
 
-    string getCurrentDateTime();
-    time_t stringToTime(const string &timeStr);
-    string timeToString(time_t time);
+    std::string getCurrentDateTime();
+    time_t stringToTime(const std::string &timeStr);
+    std::string timeToString(time_t time);
     long long calculateDuration(time_t start, time_t end);
 
-    string trim(const string &str);
-    string toUpper(const string &str);
-    string toLower(const string &str);
+    std::string trim(const std::string &str);
+    std::string toUpper(const std::string &str);
+    std::string toLower(const std::string &str);
 
-    // string generateID(const string &prefix);
-    string createInitials(const string &fullName);
+    std::string createInitials(const std::string &fullName);
 
-    string generateID(const string &prefix);
+    std::string generateID(const std::string &prefix);
 
-    // Tạo Vehicle ID dễ nhớ
-    string generateReadableVehicleID(const string &ownerName,
-                                     const string &phoneNumber,
-                                     int vehicleCount);
+    std::string generateReadableVehicleID(const std::string &ownerName,
+                                          const std::string &phoneNumber,
+                                          int vehicleCount);
 }
 
 #endif

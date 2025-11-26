@@ -1,7 +1,10 @@
 #include "User.h"
 #include "Utils.h"
+#include "UI.h"
 #include <sstream>
 #include <iomanip>
+
+extern UI ui;
 
 using namespace std;
 
@@ -35,11 +38,30 @@ void User::setEmail(const string &mail)
 
 void User::displayInfo() const
 {
-    cout << "User ID: " << userId << endl;
-    cout << "Username: " << username << endl;
-    cout << "Ho ten: " << fullName << endl;
-    cout << "Dien thoai: " << phoneNumber << endl;
-    cout << "Email: " << email << endl;
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          | User ID:      ", userId);
+    ui.printRow("          | Username:     ", username);
+    ui.printRow("          | Ho ten:       ", fullName);
+    ui.printRow("          | Dien thoai:   ", phoneNumber);
+    ui.printRow("          | Email:        ", email);
+}
+
+void User::displayTableRow() const
+{
+    // int widths[] = {20, 25, 15, 25};
+    string name = fullName;
+    if (name.length() > 21)
+        name = name.substr(0, 18) + "...";
+
+    string mail = email;
+    if (mail.length() > 24)
+        mail = mail.substr(0, 21) + "...";
+
+    cout << "          | " << setw(18) << left << userId // 19 - 2
+         << " | " << setw(23) << left << name            // 21 - 2
+         << " | " << setw(13) << left << phoneNumber     // 14 - 2
+         << " | " << setw(23) << left << mail            // 24 - 2
+         << " |" << endl;
 }
 
 string User::toFileString() const

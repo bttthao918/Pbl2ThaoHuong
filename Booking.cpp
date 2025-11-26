@@ -1,9 +1,12 @@
 #include "Booking.h"
 #include "Exceptions.h"
 #include "Utils.h"
+#include "UI.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
+
+extern UI ui;
 
 Booking::Booking() : bookingTime(time(nullptr)), expectedArrival(0),
                      status(BookingStatus::PENDING) {}
@@ -50,16 +53,32 @@ bool Booking::isExpired() const
 
 void Booking::displayInfo() const
 {
-    cout << "Booking ID: " << bookingId << endl;
-    cout << "Khach hang ID: " << customerId << endl;
-    cout << "Xe ID: " << vehicleId << endl;
-    cout << "Thoi gian dat: " << Utils::timeToString(bookingTime) << endl;
-    cout << "Du kien den: " << Utils::timeToString(expectedArrival) << endl;
-    cout << "Trang thai: " << statusToString(status) << endl;
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          |    Booking ID:  ", bookingId);
+    ui.printRow("          |    Customer ID: ", customerId);
+    ui.printRow("          |    Vehicle ID:  ", vehicleId);
+    ui.printRow("          |    Thoi gian:   ", Utils::timeToString(bookingTime));
+    ui.printRow("          |    Du kien den: ", Utils::timeToString(expectedArrival));
+    ui.printRow("          |    Trang thai:  ", Booking::statusToString(status));
     if (!ticketId.empty())
     {
-        cout << "Ticket ID: " << ticketId << endl;
+        ui.printRow("          |    Ticket ID:   ", ticketId);
     }
+    ui.printHorizontalLine('+', '-', '+');
+}
+
+void Booking::displayTableRow() const
+{
+    // int widths[] = {23, 15, 29, 18};
+    string arrivalStr = Utils::timeToString(expectedArrival);
+    if (arrivalStr.length() > 28)
+        arrivalStr = arrivalStr.substr(0, 25) + "...";
+
+    cout << "          | " << setw(21) << left << bookingId
+         << " | " << setw(13) << left << vehicleId
+         << " | " << setw(27) << left << arrivalStr
+         << " | " << setw(16) << left << statusToString(status)
+         << " |" << endl;
 }
 
 string Booking::toFileString() const

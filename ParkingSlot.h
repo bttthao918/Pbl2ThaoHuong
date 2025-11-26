@@ -5,8 +5,6 @@
 #include <iostream>
 #include "Vehicle.h"
 
-using namespace std;
-
 enum class SlotStatus
 {
     AVAILABLE,
@@ -18,47 +16,42 @@ enum class SlotStatus
 class ParkingSlot
 {
 private:
-    string slotId;
-    string slotNumber;       // Số vị trí (A01, B12, ...)
-    VehicleType suitableFor; // Loại xe phù hợp
+    std::string slotId;
+    std::string slotNumber;
+    VehicleType suitableFor;
     SlotStatus status;
-    string currentTicketId; // ID của ticket hiện tại (nếu đang sử dụng)
+    std::string currentTicketId;
 
 public:
-    // Constructor
     ParkingSlot();
-    ParkingSlot(const string &id, const string &number, VehicleType type);
+    ParkingSlot(const std::string &id, const std::string &number, VehicleType type);
 
-    // Getters
-    string getSlotId() const { return slotId; }
-    string getSlotNumber() const { return slotNumber; }
+    std::string getSlotId() const { return slotId; }
+    std::string getSlotNumber() const { return slotNumber; }
     VehicleType getSuitableFor() const { return suitableFor; }
     SlotStatus getStatus() const { return status; }
-    string getCurrentTicketId() const { return currentTicketId; }
+    std::string getCurrentTicketId() const { return currentTicketId; }
 
-    // Setters
     void setStatus(SlotStatus s) { status = s; }
-    void setCurrentTicketId(const string &ticketId) { currentTicketId = ticketId; }
+    void setCurrentTicketId(const std::string &ticketId) { currentTicketId = ticketId; }
 
-    // Methods
     bool isAvailable() const { return status == SlotStatus::AVAILABLE; }
     bool canAccommodate(VehicleType type) const;
-    void occupy(const string &ticketId);
+    void occupy(const std::string &ticketId);
     void release();
     void reserve();
     void setMaintenance();
 
     void displayInfo() const;
-    string toFileString() const;
-    void fromFileString(const string &line);
+    void displayTableRow() const;
+    std::string toFileString() const;
+    void fromFileString(const std::string &line);
 
-    // Operator overloading
-    friend ostream &operator<<(ostream &os, const ParkingSlot &slot);
+    friend std::ostream &operator<<(std::ostream &os, const ParkingSlot &slot);
     bool operator==(const ParkingSlot &other) const;
 
-    // Static methods
-    static string statusToString(SlotStatus status);
-    static SlotStatus stringToStatus(const string &str);
+    static std::string statusToString(SlotStatus status);
+    static SlotStatus stringToStatus(const std::string &str);
 };
 
 #endif

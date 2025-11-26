@@ -4,7 +4,6 @@
 #include <string>
 #include <ctime>
 #include <iostream>
-using namespace std;
 
 enum class TicketStatus
 {
@@ -16,11 +15,11 @@ enum class TicketStatus
 class ParkingTicket
 {
 private:
-    string ticketId;
-    string customerId;
-    string vehicleId;
-    string slotId;
-    string bookingId;
+    std::string ticketId;
+    std::string customerId;
+    std::string vehicleId;
+    std::string slotId;
+    std::string bookingId;
     time_t checkInTime;
     time_t checkOutTime;
     double fee;
@@ -28,39 +27,37 @@ private:
 
 public:
     ParkingTicket();
-    ParkingTicket(const string &id, const string &custId, const string &vehId, const string &slot);
+    ParkingTicket(const std::string &id, const std::string &custId, const std::string &vehId, const std::string &slot);
 
     // Getters
-    string getTicketId() const { return ticketId; }
-    string getCustomerId() const { return customerId; }
-    string getVehicleId() const { return vehicleId; }
-    string getSlotId() const { return slotId; }
-    string getBookingId() const { return bookingId; }
+    std::string getTicketId() const { return ticketId; }
+    std::string getCustomerId() const { return customerId; }
+    std::string getVehicleId() const { return vehicleId; }
+    std::string getSlotId() const { return slotId; }
+    std::string getBookingId() const { return bookingId; }
     time_t getCheckInTime() const { return checkInTime; }
     time_t getCheckOutTime() const { return checkOutTime; }
     double getFee() const { return fee; }
     TicketStatus getStatus() const { return status; }
 
-    // Setters
-    void setBookingId(const string &id) { bookingId = id; }
-    void setSlotId(const string &id) { slotId = id; }
+    void setBookingId(const std::string &id) { bookingId = id; }
+    void setSlotId(const std::string &id) { slotId = id; }
     void setStatus(TicketStatus s) { status = s; }
 
-    // Methods
     void checkOut(double calculatedFee);
     void cancel();
     bool isActive() const { return status == TicketStatus::ACTIVE; }
     long long getParkingDuration() const;
 
     void displayInfo() const;
-    string toFileString() const;
-    void fromFileString(const string &line);
-
-    friend ostream &operator<<(ostream &os, const ParkingTicket &ticket);
+    void displayTableRow() const;
+    std::string toFileString() const;
+    void fromFileString(const std::string &line);
+    friend std::ostream &operator<<(std::ostream &os, const ParkingTicket &ticket);
     bool operator==(const ParkingTicket &other) const;
 
-    static string statusToString(TicketStatus status);
-    static TicketStatus stringToStatus(const string &str);
+    static std::string statusToString(TicketStatus status);
+    static TicketStatus stringToStatus(const std::string &str);
 };
 
 #endif

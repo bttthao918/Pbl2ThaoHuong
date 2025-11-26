@@ -3,7 +3,6 @@
 
 #include <string>
 #include <iostream>
-using namespace std;
 
 enum class VehicleType
 {
@@ -15,46 +14,45 @@ enum class VehicleType
 class Vehicle
 {
 protected:
-    string vehicleId;
-    string licensePlate;
-    string customerId;
+    std::string vehicleId;
+    std::string licensePlate;
+    std::string customerId;
     VehicleType type;
-    string brand;
-    string model;
-    string color;
+    std::string brand;
+    std::string model;
+    std::string color;
 
 public:
     Vehicle();
-    Vehicle(const string &id, const string &plate, const string &custId,
-            VehicleType t, const string &br, const string &mod, const string &col);
+    Vehicle(const std::string &id, const std::string &plate, const std::string &custId,
+            VehicleType t, const std::string &br, const std::string &mod, const std::string &col);
     virtual ~Vehicle() {}
 
     // Getters & Setters
-    string getVehicleId() const;
-    string getLicensePlate() const;
-    string getCustomerId() const;
+    std::string getVehicleId() const;
+    std::string getLicensePlate() const;
+    std::string getCustomerId() const;
     VehicleType getType() const;
-    string getBrand() const;
-    string getModel() const;
-    string getColor() const;
+    std::string getBrand() const;
+    std::string getModel() const;
+    std::string getColor() const;
+    void setLicensePlate(const std::string &plate);
+    void setBrand(const std::string &br);
+    void setModel(const std::string &mod);
+    void setColor(const std::string &col);
 
-    void setLicensePlate(const string &plate);
-    void setBrand(const string &br);
-    void setModel(const string &mod);
-    void setColor(const string &col);
-
-    // Virtual methods
     virtual void displayInfo() const;
+    void displayTableRow() const;
     virtual double calculateParkingFee(long long minutes) const = 0;
-    virtual string getTypeString() const = 0;
-    virtual string toFileString() const;
-    virtual void fromFileString(const string &line);
+    virtual std::string getTypeString() const = 0;
+    virtual std::string toFileString() const;
+    virtual void fromFileString(const std::string &line);
 
-    friend ostream &operator<<(ostream &os, const Vehicle &vehicle);
+    friend std::ostream &operator<<(std::ostream &os, const Vehicle &vehicle);
     bool operator==(const Vehicle &other) const;
 
-    static string vehicleTypeToString(VehicleType type);
-    static VehicleType stringToVehicleType(const string &str);
+    static std::string vehicleTypeToString(VehicleType type);
+    static VehicleType stringToVehicleType(const std::string &str);
 };
 
 #endif

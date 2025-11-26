@@ -1,9 +1,12 @@
 #include "ParkingTicket.h"
 #include "Exceptions.h"
 #include "Utils.h"
+#include "UI.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
+
+extern UI ui;
 
 ParkingTicket::ParkingTicket() : checkInTime(time(nullptr)), checkOutTime(0),
                                  fee(0.0), status(TicketStatus::ACTIVE) {}
@@ -46,22 +49,48 @@ long long ParkingTicket::getParkingDuration() const
 
 void ParkingTicket::displayInfo() const
 {
-    cout << "Ticket ID: " << ticketId << endl;
-    cout << "Khach hang ID: " << customerId << endl;
-    cout << "Xe ID: " << vehicleId << endl;
-    cout << "Vi tri: " << slotId << endl;
+    ui.printHorizontalLine('+', '-', '+');
+    ui.printRow("          | Ticket ID:      ", ticketId);
+    ui.printRow("          | Customer ID:    ", customerId);
+    ui.printRow("          | Vehicle ID:     ", vehicleId);
+    ui.printRow("          | Slot ID:        ", slotId);
     if (!bookingId.empty())
     {
-        cout << "Booking ID: " << bookingId << endl;
+        ui.printRow("          | Booking ID:     ", bookingId);
     }
-    cout << "Check-in: " << Utils::timeToString(checkInTime) << endl;
+    ui.printRow("          | Check-in:       ", Utils::timeToString(checkInTime));
     if (checkOutTime > 0)
     {
-        cout << "Check-out: " << Utils::timeToString(checkOutTime) << endl;
-        cout << "Thoi gian gui: " << getParkingDuration() << " phut" << endl;
-        cout << "Phi: " << fee << " VND" << endl;
+        ui.printRow("          | Check-out:      ", Utils::timeToString(checkOutTime));
+
+        string duration = to_string(getParkingDuration()) + " phut";
+        ui.printRow("          | Thoi gian gui:  ", duration);
+
+        ostringstream feeStr;
+        feeStr << fixed << setprecision(0) << fee << " VND";
+        ui.printRow("          | Phi:            ", feeStr.str());
     }
-    cout << "Trang thai: " << statusToString(status) << endl;
+    ui.printRow("          | Trang thai:     ", statusToString(status));
+    ui.printHorizontalLine('+', '-', '+');
+}
+
+void ParkingTicket::displayTableRow() const
+{
+    // int widths[] = {17, 13, 17, 21, 16};int widths[] = {17, 13, 18, 22, 15};
+    string checkinStr = Utils::timeToString(checkInTime);
+    if (checkinStr.length() > 21)
+        checkinStr = checkinStr.substr(0, 18) + "...";
+
+    string slotStr = slotId;
+    if (slotStr.length() > 16)
+        slotStr = slotStr.substr(0, 13) + "...";
+
+    cout << "          | " << setw(15) << left << ticketId
+         << " | " << setw(11) << left << vehicleId
+         << " | " << setw(15) << left << slotStr
+         << " | " << setw(19) << left << checkinStr
+         << " | " << setw(14) << left << statusToString(status)
+         << " |" << endl;
 }
 
 string ParkingTicket::toFileString() const

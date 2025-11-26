@@ -2,7 +2,7 @@
 #define ELECTRICBIKE_H
 
 #include "Vehicle.h"
-using namespace std;
+#include <string>
 
 class ElectricBike : public Vehicle
 {
@@ -12,8 +12,8 @@ private:
 
 public:
     ElectricBike();
-    ElectricBike(const string &id, const string &plate, const string &custId,
-                 const string &br, const string &mod, const string &col,
+    ElectricBike(const std::string &id, const std::string &plate, const std::string &custId,
+                 const std::string &br, const std::string &mod, const std::string &col,
                  int battery, int speed);
 
     int getBatteryCapacity() const;
@@ -23,9 +23,9 @@ public:
 
     void displayInfo() const override;
     double calculateParkingFee(long long minutes) const override;
-    string getTypeString() const override;
-    string toFileString() const override;
-    void fromFileString(const string &line) override;
+    std::string getTypeString() const override;
+    std::string toFileString() const override;
+    void fromFileString(const std::string &line) override;
 };
 
 #endif

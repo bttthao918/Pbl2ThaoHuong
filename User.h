@@ -4,8 +4,6 @@
 #include <string>
 #include <iostream>
 
-using namespace std;  // <<< THÊM VÀO
-
 enum class UserRole
 {
     CUSTOMER,
@@ -15,39 +13,40 @@ enum class UserRole
 class User
 {
 protected:
-    string userId;
-    string username;
-    string password;
-    string fullName;
-    string phoneNumber;
-    string email;
+    std::string userId;
+    std::string username;
+    std::string password;
+    std::string fullName;
+    std::string phoneNumber;
+    std::string email;
     UserRole role;
 
 public:
     User();
-    User(const string &id, const string &uname, const string &pwd,
-         const string &name, const string &phone, const string &mail, UserRole r);
+    User(const std::string &id, const std::string &uname, const std::string &pwd,
+         const std::string &name, const std::string &phone, const std::string &mail, UserRole r);
 
     virtual ~User() {}
 
-    string getUserId() const { return userId; }
-    string getUsername() const { return username; }
-    string getPassword() const { return password; }
-    string getFullName() const { return fullName; }
-    string getPhoneNumber() const { return phoneNumber; }
-    string getEmail() const { return email; }
+    std::string getUserId() const { return userId; }
+    std::string getUsername() const { return username; }
+    std::string getPassword() const { return password; }
+    std::string getFullName() const { return fullName; }
+    std::string getPhoneNumber() const { return phoneNumber; }
+    std::string getEmail() const { return email; }
     UserRole getRole() const { return role; }
 
-    void setPassword(const string &pwd) { password = pwd; }
-    void setFullName(const string &name) { fullName = name; }
-    void setPhoneNumber(const string &phone);
-    void setEmail(const string &mail);
+    void setPassword(const std::string &pwd) { password = pwd; }
+    void setFullName(const std::string &name) { fullName = name; }
+    void setPhoneNumber(const std::string &phone);
+    void setEmail(const std::string &mail);
 
     virtual void displayInfo() const;
-    virtual string toFileString() const;
-    virtual void fromFileString(const string &line);
+    virtual void displayTableRow() const = 0;
+    virtual std::string toFileString() const;
+    virtual void fromFileString(const std::string &line);
 
-    friend ostream &operator<<(ostream &os, const User &user);
+    friend std::ostream &operator<<(std::ostream &os, const User &user);
     bool operator==(const User &other) const;
 };
 

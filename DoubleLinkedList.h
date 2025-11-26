@@ -4,8 +4,8 @@
 #include <iostream>
 #include <functional>
 #include <stdexcept>
-
-using namespace std;
+#include <string>
+using std::function;
 
 template <typename T>
 class DoubleLinkedList
@@ -25,16 +25,13 @@ private:
     int count;
 
 public:
-    // Constructor
     DoubleLinkedList() : head(nullptr), tail(nullptr), count(0) {}
 
-    // Destructor
     ~DoubleLinkedList()
     {
         clear();
     }
 
-    // Copy constructor
     DoubleLinkedList(const DoubleLinkedList &other) : head(nullptr), tail(nullptr), count(0)
     {
         Node *current = other.head;
@@ -45,7 +42,6 @@ public:
         }
     }
 
-    // Assignment operator
     DoubleLinkedList &operator=(const DoubleLinkedList &other)
     {
         if (this != &other)
@@ -61,7 +57,6 @@ public:
         return *this;
     }
 
-    // Add element to front
     void pushFront(const T &value)
     {
         Node *newNode = new Node(value);
@@ -78,7 +73,6 @@ public:
         count++;
     }
 
-    // Add element to back
     void pushBack(const T &value)
     {
         Node *newNode = new Node(value);
@@ -95,11 +89,10 @@ public:
         count++;
     }
 
-    // Remove element from front
     void popFront()
     {
         if (!head)
-            throw runtime_error("List is empty");
+            throw std::runtime_error("List is empty");
         Node *temp = head;
         head = head->next;
         if (head)
@@ -110,11 +103,10 @@ public:
         count--;
     }
 
-    // Remove element from back
     void popBack()
     {
         if (!tail)
-            throw runtime_error("List is empty");
+            throw std::runtime_error("List is empty");
         Node *temp = tail;
         tail = tail->prev;
         if (tail)
@@ -125,19 +117,16 @@ public:
         count--;
     }
 
-    // Get size
     int size() const
     {
         return count;
     }
 
-    // Check if empty
     bool empty() const
     {
         return count == 0;
     }
 
-    // Clear all elements
     void clear()
     {
         while (head)
@@ -150,8 +139,7 @@ public:
         count = 0;
     }
 
-    // Find element by condition
-    T *find(function<bool(const T &)> predicate)
+    T *find(std::function<bool(const T &)> predicate)
     {
         Node *current = head;
         while (current)
@@ -165,8 +153,7 @@ public:
         return nullptr;
     }
 
-    // Remove element by condition
-    bool remove(function<bool(const T &)> predicate)
+    bool remove(std::function<bool(const T &)> predicate)
     {
         Node *current = head;
         while (current)
@@ -192,7 +179,7 @@ public:
         return false;
     }
 
-    void forEach(function<void(const T &)> action) const
+    void forEach(std::function<void(const T &)> action) const
     {
         Node *current = head;
         while (current)
@@ -202,8 +189,7 @@ public:
         }
     }
 
-    // Filter elements
-    DoubleLinkedList<T> filter(function<bool(const T &)> predicate) const
+    DoubleLinkedList<T> filter(std::function<bool(const T &)> predicate) const
     {
         DoubleLinkedList<T> result;
         Node *current = head;
@@ -218,14 +204,11 @@ public:
         return result;
     }
 
-    // Sort using merge sort (stable, O(n log n))
-    void sort(function<bool(const T &, const T &)> compare)
+    void sort(std::function<bool(const T &, const T &)> compare)
     {
         if (count <= 1)
             return;
         head = mergeSort(head, compare);
-
-        // Update tail
         tail = head;
         while (tail->next)
         {
@@ -233,7 +216,6 @@ public:
         }
     }
 
-    // Iterator support
     class Iterator
     {
     private:
@@ -273,7 +255,6 @@ public:
     Iterator begin() { return Iterator(head); }
     Iterator end() { return Iterator(nullptr); }
 
-    // Const iterator
     class ConstIterator
     {
     private:
@@ -307,8 +288,7 @@ public:
     ConstIterator end() const { return ConstIterator(nullptr); }
 
 private:
-    // Merge sort helper functions
-    Node *mergeSort(Node *h, function<bool(const T &, const T &)> compare)
+    Node *mergeSort(Node *h, std::function<bool(const T &, const T &)> compare)
     {
         if (!h || !h->next)
             return h;
@@ -341,7 +321,7 @@ private:
         return slow;
     }
 
-    Node *merge(Node *left, Node *right, function<bool(const T &, const T &)> compare)
+    Node *merge(Node *left, Node *right, std::function<bool(const T &, const T &)> compare)
     {
         if (!left)
             return right;

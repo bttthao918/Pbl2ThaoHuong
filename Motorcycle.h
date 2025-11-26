@@ -2,7 +2,7 @@
 #define MOTORCYCLE_H
 
 #include "Vehicle.h"
-using namespace std;
+#include <string>
 
 class Motorcycle : public Vehicle
 {
@@ -11,17 +11,17 @@ private:
 
 public:
     Motorcycle();
-    Motorcycle(const string &id, const string &plate, const string &custId,
-               const string &br, const string &mod, const string &col, int capacity);
+    Motorcycle(const std::string &id, const std::string &plate, const std::string &custId,
+               const std::string &br, const std::string &mod, const std::string &col, int capacity);
 
     int getEngineCapacity() const;
     void setEngineCapacity(int capacity);
 
     void displayInfo() const override;
     double calculateParkingFee(long long minutes) const override;
-    string getTypeString() const override;
-    string toFileString() const override;
-    void fromFileString(const string &line) override;
+    std::string getTypeString() const override;
+    std::string toFileString() const override;
+    void fromFileString(const std::string &line) override;
 };
 
 #endif

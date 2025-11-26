@@ -2,8 +2,7 @@
 #define CUSTOMER_H
 
 #include "User.h"
-
-using namespace std; // <<< THÊM VÀO
+#include <string>
 
 class Customer : public User
 {
@@ -12,8 +11,8 @@ private:
 
 public:
     Customer();
-    Customer(const string &id, const string &uname, const string &pwd,
-             const string &name, const string &phone, const string &mail);
+    Customer(const std::string &id, const std::string &uname, const std::string &pwd,
+             const std::string &name, const std::string &phone, const std::string &mail);
 
     int getLoyaltyPoints() const { return loyaltyPoints; }
     void addLoyaltyPoints(int points) { loyaltyPoints += points; }
@@ -26,8 +25,9 @@ public:
     }
 
     void displayInfo() const override;
-    string toFileString() const override;
-    void fromFileString(const string &line) override;
+    void displayTableRow() const override;
+    std::string toFileString() const override;
+    void fromFileString(const std::string &line) override;
 };
 
 #endif
