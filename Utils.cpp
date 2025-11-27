@@ -4,6 +4,7 @@
 #include <regex>
 #include <random>
 #include <ctime>
+#include <conio.h>
 
 using namespace std;
 

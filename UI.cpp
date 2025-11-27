@@ -253,22 +253,39 @@ void UI::showLoginScreen()
     printHorizontalLine('+', '-', '+');
 }
 
-string UI::inputUsername()
+string UI::inputBoxPassword(const string &label)
 {
-    string username;
-    cout << string(leftPadding, ' ') << "| " << Color::WHITE << "Username: " << Color::RESET;
-    getline(cin, username);
-    return username;
-}
+    // Vẽ dòng trên
+    cout << string(leftPadding, ' ') << "+";
+    cout << string(boxWidth - 2, '-') << "+\n";
 
-string UI::inputPassword()
-{
-    cout << string(leftPadding, ' ') << "| " << Color::WHITE << "Password: " << Color::RESET;
-    string pwd;
-    getline(cin, pwd);
-    // Print asterisks for display
-    cout << string(leftPadding, ' ') << "|" << string(boxWidth - 2, ' ') << "|" << endl;
-    printHorizontalLine('+', '-', '+');
+    // In label KHÔNG xuống dòng
+    cout << string(leftPadding, ' ') << "| " << label;
+    cout.flush();
+
+    // Đọc password ẩn (getHiddenInput sẽ đọc và in '*' trong quá trình nhập)
+    string pwd = getHiddenInput();
+
+    // Di chuyển lên 1 dòng và xóa để vẽ lại dòng hoàn chỉnh giống inputBoxString
+    cout << "\033[1A"; // Di chuyển lên 1 dòng
+    cout << "\033[K";  // Xóa dòng đó
+
+    // Vẽ lại dòng với dấu '*' thay cho mật khẩu
+    string masked(pwd.length(), '*');
+    cout << string(leftPadding, ' ') << "| " << label << masked;
+
+    // Tính padding và đóng box
+    int usedSpace = 2 + label.length() + masked.length() + 1; // "| " + label + masked + "|"
+    int pad = boxWidth - usedSpace;
+    if (pad < 0)
+        pad = 0;
+
+    cout << string(pad, ' ') << "|\n";
+
+    // Đóng box
+    cout << string(leftPadding, ' ') << "+";
+    cout << string(boxWidth - 2, '-') << "+\n";
+
     return pwd;
 }
 

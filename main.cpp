@@ -109,7 +109,7 @@ void handleLogin(ParkingManager &manager)
             ui.showInfoMessage("Huy dang nhap. Tro ve menu chinh.");
             return;
         }
-        password = ui.inputBoxString("Mat khau: ");
+        password = ui.inputBoxPassword("Mat khau: ");
         if (manager.login(username, password))
         {
             ui.showSuccessMessage("Dang nhap thanh cong!");

@@ -36,7 +36,6 @@ class UI
 private:
     int boxWidth = 90;
     int leftPadding = 10;
-    std::string getHiddenInput();
 
 public:
     UI() {}
@@ -45,8 +44,8 @@ public:
     void printEmptyLine();
     void printCenteredText(const std::string &text, const std::string &color = "");
 
-    string inputUsername();
-    string inputPassword();
+    std::string getHiddenInput();
+    std::string inputBoxPassword(const std::string &label);
     std::string inputBoxString(const std::string &label);
     int inputBoxInt(const std::string &label);
     double inputBoxDouble(const std::string &label);
