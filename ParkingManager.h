@@ -73,10 +73,12 @@ public:
     DoubleLinkedList<std::shared_ptr<User>> getAllAdmins();
 
     // Vehicle management
-    bool registerVehicle(const std::string &licensePlate, VehicleType type,
-                         const std::string &brand, const std::string &model,
-                         const std::string &color, const std::string &customerId);
-    std::shared_ptr<Vehicle> getVehicle(const std::string &vehicleId);
+    bool registerVehicle(const string &licensePlate, VehicleType type,
+                         const string &brand, const string &model,
+                         const string &color, const string &customerId,
+                         int engineCapacity, int seatCount,
+                         bool isLuxury, int battery, int maxSpeed);
+    std::shared_ptr<Vehicle> getVehicle(const std::string &vehicleId); // chỉ trả về 1 đối tượng ko cần DLL
     std::shared_ptr<Vehicle> getVehicleByPlate(const std::string &plate);
     DoubleLinkedList<std::shared_ptr<Vehicle>> getVehiclesByCustomer(const std::string &customerId);
     DoubleLinkedList<std::shared_ptr<Vehicle>> getAllVehicles();

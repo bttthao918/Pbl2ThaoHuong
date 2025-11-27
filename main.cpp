@@ -376,47 +376,44 @@ void customerVehicleManagement(ParkingManager &manager)
                 }
 
                 if (manager.registerVehicle(plate, type, brand, model, color,
-                                            manager.getCurrentUser()->getUserId()))
+                                            manager.getCurrentUser()->getUserId(),
+                                            engineCapacity, seatCount, isLuxury, battery, maxSpeed))
                 {
-                    if (manager.registerVehicle(plate, type, brand, model, color,
-                                                manager.getCurrentUser()->getUserId()))
+                    auto v = manager.getVehicleByPlate(plate);
+                    if (v)
                     {
-                        auto v = manager.getVehicleByPlate(plate);
-                        if (v)
+                        if (type == VehicleType::MOTORCYCLE)
                         {
-                            if (type == VehicleType::MOTORCYCLE)
-                            {
-                                auto m = std::dynamic_pointer_cast<Motorcycle>(v);
-                                if (m)
-                                    m->setEngineCapacity(engineCapacity);
-                            }
-                            else if (type == VehicleType::CAR)
-                            {
-                                auto c = std::dynamic_pointer_cast<Car>(v);
-                                if (c)
-                                {
-                                    c->setSeatCount(seatCount);
-                                    c->setIsLuxury(isLuxury);
-                                }
-                            }
-                            else if (type == VehicleType::ELECTRIC_BIKE)
-                            {
-                                auto e = std::dynamic_pointer_cast<ElectricBike>(v);
-                                if (e)
-                                {
-                                    e->setBatteryCapacity(battery);
-                                    e->setMaxSpeed(maxSpeed);
-                                }
-                            }
-
-                            // Luu thay doi neu can
-                            manager.saveAllData();
+                            auto m = std::dynamic_pointer_cast<Motorcycle>(v);
+                            if (m)
+                                m->setEngineCapacity(engineCapacity);
                         }
+                        else if (type == VehicleType::CAR)
+                        {
+                            auto c = std::dynamic_pointer_cast<Car>(v);
+                            if (c)
+                            {
+                                c->setSeatCount(seatCount);
+                                c->setIsLuxury(isLuxury);
+                            }
+                        }
+                        else if (type == VehicleType::ELECTRIC_BIKE)
+                        {
+                            auto e = std::dynamic_pointer_cast<ElectricBike>(v);
+                            if (e)
+                            {
+                                e->setBatteryCapacity(battery);
+                                e->setMaxSpeed(maxSpeed);
+                            }
+                        }
+
+                        // Luu thay doi neu can
+                        manager.saveAllData();
                     }
-                    ui.showSuccessMessage("Dang ky xe thanh cong!");
                 }
-                break;
+                ui.showSuccessMessage("Dang ky xe thanh cong!");
             }
+            break;
             case 2:
             {
                 Utils::clearScreen();
@@ -530,29 +527,30 @@ void customerVehicleManagement(ParkingManager &manager)
 
                 ui.showReportHeader("THONG TIN XE CAN XOA");
                 vehicle->displayInfo();
-                string confirm = ui.inputBoxString("Nhap 'YES' de xac nhan xoa xe: ");
+                string confirm = ui.inputBoxString("Ban co chac chan muon xoa xe nay? (yes/no): ");
 
-                if (confirm != "YES")
+                if (confirm == "yes" || confirm == "YES")
+                {
+                    try
+                    {
+                        if (manager.deleteVehicle(vehicleId))
+                        {
+                            ui.showSuccessMessage("Xoa xe thanh cong!");
+                        }
+                        else
+                        {
+                            ui.showErrorMessage("Xoa xe that bai!");
+                        }
+                    }
+                    catch (const exception &e)
+                    {
+                        ui.showErrorMessage(e.what());
+                    }
+                }
+                else
                 {
                     ui.showInfoMessage("Da huy thao tac xoa.");
-                    break;
                 }
-                try
-                {
-                    if (manager.deleteVehicle(vehicleId))
-                    {
-                        ui.showSuccessMessage("Xoa xe thanh cong!");
-                    }
-                    else
-                    {
-                        ui.showErrorMessage("Xoa xe that bai!");
-                    }
-                }
-                catch (const exception &e)
-                {
-                    ui.showErrorMessage(e.what());
-                }
-
                 break;
             }
             default:
@@ -685,6 +683,7 @@ void customerBookingManagement(ParkingManager &manager)
             case 2:
             {
                 Utils::clearScreen();
+
                 auto bookings = manager.getBookingsByCustomer(
                     manager.getCurrentUser()->getUserId());
 

@@ -252,9 +252,12 @@ DoubleLinkedList<shared_ptr<User>> ParkingManager::getAllAdmins()
 }
 
 // ========== Vehicle Management ==========
+
 bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType type,
                                      const string &brand, const string &model,
-                                     const string &color, const string &customerId)
+                                     const string &color, const string &customerId,
+                                     int engineCapacity, int seatCount,
+                                     bool isLuxury, int battery, int maxSpeed)
 {
     // Check if license plate already exists
     auto existing = vehicles.find([&](const shared_ptr<Vehicle> &v)
@@ -274,18 +277,30 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
         switch (type)
         {
         case VehicleType::MOTORCYCLE:
+        {
+            int ec = (engineCapacity > 0) ? engineCapacity : 150;
             newVehicle = make_shared<Motorcycle>(vehicleId, licensePlate,
-                                                 customerId, brand, model, color, 150);
+                                                 customerId, brand, model, color, ec);
             break;
+        }
         case VehicleType::CAR:
+        {
+            int sc = (seatCount > 0) ? seatCount : 5;
             newVehicle = make_shared<Car>(vehicleId, licensePlate,
-                                          customerId, brand, model, color, 5, false);
+                                          customerId, brand, model, color, sc, isLuxury);
             break;
+        }
         case VehicleType::ELECTRIC_BIKE:
+        {
+            int b = (battery > 0) ? battery : 10000;
+            int ms = (maxSpeed > 0) ? maxSpeed : 45;
             newVehicle = make_shared<ElectricBike>(vehicleId, licensePlate,
                                                    customerId, brand, model, color,
-                                                   10000, 45);
+                                                   b, ms);
             break;
+        }
+        default:
+            throw invalid_argument("Loai xe khong hop le");
         }
 
         vehicles.pushBack(newVehicle);
@@ -526,12 +541,23 @@ bool ParkingManager::confirmBooking(const string &bookingId)
     }
 }
 
-// ...existing code...
 void ParkingManager::cancelBooking()
 {
-    // Lấy tất cả booking
-    auto allBookings = getAllBookings();
-    if (allBookings.empty())
+    // KIỂM TRA: Nếu là customer thì chỉ lấy booking của họ
+    DoubleLinkedList<Booking> bookingsToShow;
+
+    if (currentUser && currentUser->getRole() == UserRole::CUSTOMER)
+    {
+        // Khách hàng chỉ thấy booking của mình
+        bookingsToShow = getBookingsByCustomer(currentUser->getUserId());
+    }
+    else
+    {
+        // Admin thấy tất cả
+        bookingsToShow = getAllBookings();
+    }
+
+    if (bookingsToShow.empty())
     {
         ui.showInfoMessage("Khong co don dat cho nao.");
         return;
@@ -539,19 +565,34 @@ void ParkingManager::cancelBooking()
 
     // Hiển thị danh sách booking
     ui.showReportHeader("DANH SACH DON DAT CHO");
-    for (const auto &booking : allBookings)
+    for (auto it = bookingsToShow.begin(); it != bookingsToShow.end(); ++it)
     {
-        booking.displayInfo();
+        it->displayInfo();
     }
-
     // Người dùng nhập ID
-    string bookingId = ui.inputBoxString("Nhap Booking ID can huy: ");
+    string bookingId = ui.inputBoxString("Nhap Booking ID can huy (0 de thoat): ");
+
+    if (bookingId == "0")
+    {
+        ui.showInfoMessage("Da huy thao tac.");
+        return;
+    }
 
     Booking *booking = getBooking(bookingId);
     if (!booking)
     {
         ui.showErrorMessage("Khong tim thay don dat cho voi ID: " + bookingId);
         return;
+    }
+
+    // KIỂM TRA QUYỀN SỞ HỮU: Customer chỉ được hủy booking của mình
+    if (currentUser && currentUser->getRole() == UserRole::CUSTOMER)
+    {
+        if (booking->getCustomerId() != currentUser->getUserId())
+        {
+            ui.showErrorMessage("Ban khong co quyen huy booking nay!");
+            return;
+        }
     }
 
     // Chặn hủy khi trạng thái không hợp lệ
@@ -573,7 +614,7 @@ void ParkingManager::cancelBooking()
     }
 
     // Hiển thị chi tiết để xác nhận
-    ui.showReportHeader("THONG TIN DON DAT CHO:");
+    ui.showReportHeader("THONG TIN DON DAT CHO");
     booking->displayInfo();
 
     // Xác nhận
@@ -1010,46 +1051,102 @@ void ParkingManager::adminPriceManagement(ParkingManager &manager)
         {
             double newPrice;
             int newMinutes;
+            std::string confirm;
 
             switch (choice)
             {
             case 1:
+            {
+                double old = pricing->getMotorcyclePrice();
                 newPrice = ui.inputBoxDouble("Nhap gia moi cho xe may (VND/gio): ");
-                pricing->setMotorcyclePrice(newPrice);
-                ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                confirm = ui.inputBoxString("Ban co chac muon cap nhat gia xe may tu " + std::to_string((long long)old) + " -> " + std::to_string((long long)newPrice) + " ? (y/n): ");
+                if (confirm == "y" || confirm == "Y")
+                {
+                    pricing->setMotorcyclePrice(newPrice);
+                    ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                }
+                else
+                {
+                    ui.showInfoMessage("Da huy thao tac.");
+                }
                 break;
+            }
 
             case 2:
+            {
+                double old = pricing->getCarStandardPrice();
                 newPrice = ui.inputBoxDouble("Nhap gia moi cho o to thuong (VND/gio): ");
-                pricing->setCarStandardPrice(newPrice);
-                ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                confirm = ui.inputBoxString("Ban co chac muon cap nhat gia o to thuong tu " + std::to_string((long long)old) + " -> " + std::to_string((long long)newPrice) + " ? (y/n): ");
+                if (confirm == "y" || confirm == "Y")
+                {
+                    pricing->setCarStandardPrice(newPrice);
+                    ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                }
+                else
+                {
+                    ui.showInfoMessage("Da huy thao tac.");
+                }
                 break;
+            }
 
             case 3:
+            {
+                double old = pricing->getCarLuxuryPrice();
                 newPrice = ui.inputBoxDouble("Nhap gia moi cho o to sang (VND/gio): ");
-                pricing->setCarLuxuryPrice(newPrice);
-                ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                confirm = ui.inputBoxString("Ban co chac muon cap nhat gia o to sang tu " + std::to_string((long long)old) + " -> " + std::to_string((long long)newPrice) + " ? (y/n): ");
+                if (confirm == "y" || confirm == "Y")
+                {
+                    pricing->setCarLuxuryPrice(newPrice);
+                    ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                }
+                else
+                {
+                    ui.showInfoMessage("Da huy thao tac.");
+                }
                 break;
+            }
 
             case 4:
+            {
+                double old = pricing->getElectricBikePrice();
                 newPrice = ui.inputBoxDouble("Nhap gia moi cho xe dap dien (VND/gio): ");
-                pricing->setElectricBikePrice(newPrice);
-                ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                confirm = ui.inputBoxString("Ban co chac muon cap nhat gia xe dap dien tu " + std::to_string((long long)old) + " -> " + std::to_string((long long)newPrice) + " ? (y/n): ");
+                if (confirm == "y" || confirm == "Y")
+                {
+                    pricing->setElectricBikePrice(newPrice);
+                    ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                }
+                else
+                {
+                    ui.showInfoMessage("Da huy thao tac.");
+                }
                 break;
+            }
 
             case 5:
+            {
+                int old = pricing->getMinimumMinutes();
                 newMinutes = ui.inputBoxInt("Nhap thoi gian toi thieu moi (phut): ");
-                pricing->setMinimumMinutes(newMinutes);
-                ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                confirm = ui.inputBoxString("Ban co chac muon cap nhat thoi gian toi thieu tu " + std::to_string(old) + " -> " + std::to_string(newMinutes) + " phut? (y/n): ");
+                if (confirm == "y" || confirm == "Y")
+                {
+                    pricing->setMinimumMinutes(newMinutes);
+                    ui.showSuccessMessage("Cap nhat gia thanh cong!");
+                }
+                else
+                {
+                    ui.showInfoMessage("Da huy thao tac.");
+                }
                 break;
+            }
 
             default:
                 ui.showErrorMessage("Lua chon khong hop le!");
             }
         }
-        catch (const exception &e)
+        catch (const std::exception &e)
         {
-            ui.showErrorMessage(string("Loi: ") + e.what());
+            ui.showErrorMessage(std::string("Loi: ") + e.what());
         }
         Utils::pause();
     }
