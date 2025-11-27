@@ -143,7 +143,7 @@ void handleRegister(ParkingManager &manager)
 
     while (true)
     {
-        roleChoice = ui.inputBoxInt("Loai tai khoan (1-Khach hang, 2-Quan ly, 0-Huy): ");
+        roleChoice = ui.inputBoxInt("Loai tai khoan: ");
 
         if (cin.fail())
         {
@@ -527,9 +527,9 @@ void customerVehicleManagement(ParkingManager &manager)
 
                 ui.showReportHeader("THONG TIN XE CAN XOA");
                 vehicle->displayInfo();
-                string confirm = ui.inputBoxString("Ban co chac chan muon xoa xe nay? (yes/no): ");
+                string confirm = ui.inputBoxString("Ban co chac chan muon xoa xe nay? (y/n): ");
 
-                if (confirm == "yes" || confirm == "YES")
+                if (confirm == "y" || confirm == "Y")
                 {
                     try
                     {
@@ -1032,9 +1032,9 @@ void adminUserManagement(ParkingManager &manager)
 
                 ui.showReportHeader("THONG TIN KHACH HANG");
                 customer->displayInfo();
-                string confirm = ui.inputBoxString("Ban co chac chan muon xoa khach hang nay? (yes/no): ");
+                string confirm = ui.inputBoxString("Ban co chac chan muon xoa khach hang nay? (y/n): ");
 
-                if (confirm == "yes" || confirm == "YES")
+                if (confirm == "y" || confirm == "Y")
                 {
                     if (manager.deleteCustomer(customerId))
                     {

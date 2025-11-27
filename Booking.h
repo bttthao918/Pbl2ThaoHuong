@@ -34,6 +34,12 @@ public:
     std::string getCustomerId() const { return customerId; }
     std::string getVehicleId() const { return vehicleId; }
     std::string getSlotId() const { return slotId; }
+    time_t getStartTime() const { return expectedArrival; }
+    time_t getEndTime() const
+    {
+        // Giả sử booking có hiệu lực trong 2 giờ từ thời điểm dự kiến đến
+        return expectedArrival + 7200; // 2 hours = 7200 seconds
+    }
     time_t getBookingTime() const { return bookingTime; }
     time_t getExpectedArrival() const { return expectedArrival; }
     BookingStatus getStatus() const { return status; }

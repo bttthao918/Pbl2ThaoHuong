@@ -660,7 +660,8 @@ ParkingSlot *ParkingManager::findAvailableSlot(VehicleType type)
                              { return s.isAvailable() && s.canAccommodate(type); });
 }
 
-string ParkingManager::checkIn(const string &customerId, const string &vehicleId, const string &bookingId, const string &slotId)
+string ParkingManager::checkIn(const string &customerId, const string &vehicleId,
+                               const string &bookingId, const string &slotId)
 {
     Customer *customer = getCustomer(customerId);
     auto vehicle = getVehicle(vehicleId);
@@ -678,8 +679,33 @@ string ParkingManager::checkIn(const string &customerId, const string &vehicleId
         {
             throw InvalidInputException("Booking khong hop le hoac chua xac nhan");
         }
+
+        // Kiểm tra thời gian check-in (cho phép 15 phút trước expectedArrival)
+        time_t now = time(nullptr);
+        time_t expectedArrival = booking->getExpectedArrival();
+        const int EARLY_CHECKIN_MINUTES = 15;
+        const int EARLY_CHECKIN_SECONDS = EARLY_CHECKIN_MINUTES * 60;
+
+        // Thời gian sớm nhất có thể check-in
+        time_t earliestCheckInTime = expectedArrival - EARLY_CHECKIN_SECONDS;
+
+        if (now < earliestCheckInTime)
+        {
+            // Quá sớm để check-in
+            int minutesEarly = (earliestCheckInTime - now) / 60 + 1;
+            throw InvalidInputException("Check-in qua som. Vui long quay lai sau " +
+                                        to_string(minutesEarly) + " phut");
+        }
+
+        // Kiểm tra booking đã hết hạn chưa (30 phút sau expectedArrival)
+        if (booking->isExpired())
+        {
+            throw InvalidInputException("Booking da het han");
+        }
+
         slot = getParkingSlot(booking->getSlotId());
-        if (!slot || (slot->getStatus() != SlotStatus::AVAILABLE && slot->getStatus() != SlotStatus::RESERVED))
+        if (!slot || (slot->getStatus() != SlotStatus::AVAILABLE &&
+                      slot->getStatus() != SlotStatus::RESERVED))
         {
             throw InvalidInputException("Slot trong booking khong hop le");
         }
@@ -689,7 +715,8 @@ string ParkingManager::checkIn(const string &customerId, const string &vehicleId
         if (!slotId.empty())
         {
             slot = getParkingSlot(slotId);
-            if (!slot || slot->getStatus() != SlotStatus::AVAILABLE || !slot->canAccommodate(vehicle->getType()))
+            if (!slot || slot->getStatus() != SlotStatus::AVAILABLE ||
+                !slot->canAccommodate(vehicle->getType()))
             {
                 throw InvalidInputException("Slot khong hop le hoac da duoc su dung");
             }
