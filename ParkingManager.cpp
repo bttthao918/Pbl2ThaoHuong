@@ -680,21 +680,25 @@ string ParkingManager::checkIn(const string &customerId, const string &vehicleId
             throw InvalidInputException("Booking khong hop le hoac chua xac nhan");
         }
 
-        // Kiểm tra thời gian check-in (cho phép 15 phút trước expectedArrival)
+        // Kiểm tra thời gian check-in
         time_t now = time(nullptr);
         time_t expectedArrival = booking->getExpectedArrival();
         const int EARLY_CHECKIN_MINUTES = 15;
-        const int EARLY_CHECKIN_SECONDS = EARLY_CHECKIN_MINUTES * 60;
 
-        // Thời gian sớm nhất có thể check-in
-        time_t earliestCheckInTime = expectedArrival - EARLY_CHECKIN_SECONDS;
+        // Tính thời gian chờ (từ bây giờ đến expectedArrival)
+        long long waitMinutes = (expectedArrival - now) / 60;
 
-        if (now < earliestCheckInTime)
+        // Nếu thời gian chờ < 15 phút, cho phép check-in ngay
+        // Nếu >= 15 phút, chỉ cho check-in trước 15 phút
+        if (waitMinutes >= EARLY_CHECKIN_MINUTES)
         {
-            // Quá sớm để check-in
-            int minutesEarly = (earliestCheckInTime - now) / 60 + 1;
-            throw InvalidInputException("Check-in qua som. Vui long quay lai sau " +
-                                        to_string(minutesEarly) + " phut");
+            time_t earliestCheckIn = expectedArrival - (EARLY_CHECKIN_MINUTES * 60);
+
+            if (now < earliestCheckIn)
+            {
+                long long minutesLeft = (earliestCheckIn - now) / 60;
+                ui.showErrorMessage("Chua den gio check-in! Vui long doi them " + to_string(minutesLeft) + " phut."); // hoặc continue tùy vào logic của bạn
+            }
         }
 
         // Kiểm tra booking đã hết hạn chưa (30 phút sau expectedArrival)
@@ -1228,12 +1232,6 @@ void ParkingManager::sortUsersByName()
 {
     users.sort([](const shared_ptr<User> &a, const shared_ptr<User> &b)
                { return a->getFullName() < b->getFullName(); });
-}
-
-void ParkingManager::sortVehiclesByPlate()
-{
-    vehicles.sort([](const shared_ptr<Vehicle> &a, const shared_ptr<Vehicle> &b)
-                  { return a->getLicensePlate() < b->getLicensePlate(); });
 }
 
 // ========== Statistics & Reports ==========

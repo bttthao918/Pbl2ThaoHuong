@@ -19,25 +19,24 @@
 #include <iostream>
 using std::shared_ptr;
 using std::string;
-using namespace std;
 
 class ParkingManager
 {
 private:
-    DoubleLinkedList<shared_ptr<User>> users;
-    DoubleLinkedList<shared_ptr<Vehicle>> vehicles;
+    DoubleLinkedList<std::shared_ptr<User>> users;
+    DoubleLinkedList<std::shared_ptr<Vehicle>> vehicles;
     DoubleLinkedList<ParkingSlot> parkingSlots;
     DoubleLinkedList<Booking> bookings;
     DoubleLinkedList<ParkingTicket> tickets;
 
     std::shared_ptr<User> currentUser;
 
-    const string CUSTOMERS_FILE = "customers.txt";
-    const string ADMINS_FILE = "admins.txt";
-    const string VEHICLES_FILE = "vehicles.txt";
-    const string SLOTS_FILE = "slots.txt";
-    const string BOOKINGS_FILE = "bookings.txt";
-    const string TICKETS_FILE = "tickets.txt";
+    const std::string CUSTOMERS_FILE = "customers.txt";
+    const std::string ADMINS_FILE = "admins.txt";
+    const std::string VEHICLES_FILE = "vehicles.txt";
+    const std::string SLOTS_FILE = "slots.txt";
+    const std::string BOOKINGS_FILE = "bookings.txt";
+    const std::string TICKETS_FILE = "tickets.txt";
 
 public:
     // Constructor & Destructor
@@ -46,9 +45,9 @@ public:
 
     // User management
     bool registerUser(const string &username, const string &password,
-                      const string &fullName, const string &phone,
-                      const string &email, UserRole role,
-                      const string &employeeID = ""); // Thêm tham số mới
+                      const std::string &fullName, const std::string &phone,
+                      const std::string &email, UserRole role,
+                      const std::string &employeeID = ""); // Thêm tham số mới
     bool login(const std::string &username, const std::string &password);
     void logout();
     std::shared_ptr<User> getCurrentUser() const { return currentUser; }
@@ -73,9 +72,9 @@ public:
     DoubleLinkedList<std::shared_ptr<User>> getAllAdmins();
 
     // Vehicle management
-    bool registerVehicle(const string &licensePlate, VehicleType type,
-                         const string &brand, const string &model,
-                         const string &color, const string &customerId,
+    bool registerVehicle(const std::string &licensePlate, VehicleType type,
+                         const std::string &brand, const std::string &model,
+                         const std::string &color, const std::string &customerId,
                          int engineCapacity, int seatCount,
                          bool isLuxury, int battery, int maxSpeed);
     std::shared_ptr<Vehicle> getVehicle(const std::string &vehicleId); // chỉ trả về 1 đối tượng ko cần DLL
@@ -95,6 +94,7 @@ public:
     DoubleLinkedList<ParkingSlot> getAllSlots();
     bool updateSlotStatus(const std::string &slotId, SlotStatus status);
     bool deleteParkingSlot(const std::string &slotId);
+    ParkingSlot *findAvailableSlot(VehicleType type);
 
     // Booking management
     bool createBooking(const std::string &customerId,
@@ -128,7 +128,6 @@ public:
 
     // Sort
     void sortUsersByName();
-    void sortVehiclesByPlate();
 
     // Statistics & Reports
     int getTotalSlots() const;
@@ -161,8 +160,6 @@ private:
     std::string generateSlotId();
     std::string generateBookingId();
     std::string generateTicketId();
-
-    ParkingSlot *findAvailableSlot(VehicleType type);
 };
 
 #endif

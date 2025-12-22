@@ -589,7 +589,6 @@ void customerBookingManagement(ParkingManager &manager)
 
                 string vehicleId;
                 shared_ptr<Vehicle> vehicle;
-                int hours = -1;
 
                 // 1. Nhập Vehicle ID
                 while (true)
@@ -612,14 +611,35 @@ void customerBookingManagement(ParkingManager &manager)
                     break; // Thoát nếu không có xe
 
                 // 2. Nhập số giờ dự kiến
-                hours = ui.inputBoxInt("Du kien den sau bao nhieu gio? (>=0): ");
+                ui.showInfoMessage("Nhap thoi gian du kien den (gio va phut): ");
+
+                int hours = ui.inputBoxInt("So gio: ");
+                int minutes = ui.inputBoxInt("So phut: ");
+
+                if (hours < 0 || minutes < 0 || minutes >= 60)
+                {
+                    ui.showErrorMessage("Nhap khong hop le!");
+                    break;
+                }
+
+                int totalMinutes = hours * 60 + minutes;
+
+                // Làm tròn lên bội số 5 nếu muốn
+                if (totalMinutes % 5 != 0)
+                {
+                    totalMinutes = ((totalMinutes / 5) + 1) * 5;
+                    ui.showInfoMessage("Da lam tron thanh: " + to_string(totalMinutes) + " phut");
+                }
+
+                time_t expectedArrival = time(nullptr) + static_cast<time_t>(totalMinutes) * 60;
+                /*hours = ui.inputBoxInt("Du kien den sau bao nhieu gio? (>=0): ");
                 if (hours < 0)
                 {
                     ui.showErrorMessage("Nhap khong hop le!");
                     break;
                 }
 
-                time_t expectedArrival = time(nullptr) + static_cast<time_t>(hours) * 3600;
+                time_t expectedArrival = time(nullptr) + static_cast<time_t>(hours) * 3600;*/
 
                 // 3. Lấy danh sách chỗ trống
                 auto freeSlots = manager.getAvailableSlotsByType(vehicle->getType());
