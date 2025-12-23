@@ -145,4 +145,4 @@ namespace Utils
 
         return initials + "_" + phonePart + "_" + vehicleNum;
     }
-} // namespace Utils
+} 

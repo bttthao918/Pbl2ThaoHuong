@@ -28,7 +28,6 @@ public:
             VehicleType t, const std::string &br, const std::string &mod, const std::string &col);
     virtual ~Vehicle() {}
 
-    // Getters & Setters
     std::string getVehicleId() const;
     std::string getLicensePlate() const;
     std::string getCustomerId() const;

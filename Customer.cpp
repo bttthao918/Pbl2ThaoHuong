@@ -51,7 +51,18 @@ void Customer::fromFileString(const string &line)
     }
 
     User::fromFileString(baseData);
-
-    iss.ignore();
-    iss >> loyaltyPoints;
+    
+    string lp;
+    if (getline(iss, lp))
+    {
+        try
+        {
+            loyaltyPoints = stoi(lp);
+        }
+        catch (...) { loyaltyPoints = 0; }
+    }
+    else
+    {
+        loyaltyPoints = 0;
+    }
 }

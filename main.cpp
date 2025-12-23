@@ -31,7 +31,7 @@ void adminStatistics(ParkingManager &manager);
 int main()
 {
     ParkingManager manager;
-    // Initialize some sample parking slots if empty
+
     if (manager.getTotalSlots() == 0)
     {
         ui.showInfoMessage("Khoi tao du lieu");
@@ -590,7 +590,7 @@ void customerBookingManagement(ParkingManager &manager)
                 string vehicleId;
                 shared_ptr<Vehicle> vehicle;
 
-                // 1. Nhập Vehicle ID
+                // Nhập Vehicle ID
                 while (true)
                 {
                     vehicleId = ui.inputBoxString("Vehicle ID (nhap 0 de huy): ");
@@ -608,9 +608,9 @@ void customerBookingManagement(ParkingManager &manager)
                 }
 
                 if (!vehicle)
-                    break; // Thoát nếu không có xe
+                    break; 
 
-                // 2. Nhập số giờ dự kiến
+                // Nhập số giờ dự kiến
                 ui.showInfoMessage("Nhap thoi gian du kien den (gio va phut): ");
 
                 int hours = ui.inputBoxInt("So gio: ");
@@ -624,7 +624,6 @@ void customerBookingManagement(ParkingManager &manager)
 
                 int totalMinutes = hours * 60 + minutes;
 
-                // Làm tròn lên bội số 5 nếu muốn
                 if (totalMinutes % 5 != 0)
                 {
                     totalMinutes = ((totalMinutes / 5) + 1) * 5;
@@ -632,16 +631,8 @@ void customerBookingManagement(ParkingManager &manager)
                 }
 
                 time_t expectedArrival = time(nullptr) + static_cast<time_t>(totalMinutes) * 60;
-                /*hours = ui.inputBoxInt("Du kien den sau bao nhieu gio? (>=0): ");
-                if (hours < 0)
-                {
-                    ui.showErrorMessage("Nhap khong hop le!");
-                    break;
-                }
 
-                time_t expectedArrival = time(nullptr) + static_cast<time_t>(hours) * 3600;*/
-
-                // 3. Lấy danh sách chỗ trống
+                //Lấy danh sách chỗ trống
                 auto freeSlots = manager.getAvailableSlotsByType(vehicle->getType());
                 DoubleLinkedList<string> slotIds;
 
@@ -684,9 +675,8 @@ void customerBookingManagement(ParkingManager &manager)
                         ++i;
                     }
                 }
-                // Nếu choice == 0, chosenSlotId sẽ để trống -> manager tự chọn slot
 
-                // 5. Tạo booking
+                // Tạo booking
                 bool ok = manager.createBooking(
                     manager.getCurrentUser()->getUserId(),
                     vehicleId,
@@ -760,7 +750,7 @@ void viewCustomerHistory(ParkingManager &manager)
     }
     else
     {
-        int widths[] = {17, 13, 17, 21, 16};
+        int widths[] = {17, 15, 17, 21, 14};
         string headers[] = {"Ticket ID", "Vehicle ID", "Slot", "Check-in", "Trang thai"};
 
         ui.printBorder(widths, 5);
@@ -1344,7 +1334,6 @@ void adminBookingManagement(ParkingManager &manager)
                     slotId = ui.inputBoxString("Nhap Slot ID (bo trong neu muon tu dong): ");
                 }
 
-                // --- CHANGED: determine correct customerId ---
                 string customerId;
                 if (!bookingId.empty())
                 {
@@ -1354,11 +1343,10 @@ void adminBookingManagement(ParkingManager &manager)
                         ui.showErrorMessage("Booking ID khong ton tai!");
                         break;
                     }
-                    customerId = bk->getCustomerId(); // use booking's customer
+                    customerId = bk->getCustomerId(); 
                 }
                 else
                 {
-                    // No booking: admin must provide customer id (or we could try to infer from vehicle)
                     customerId = ui.inputBoxString("Nhap Customer ID (de tiep tuc): ");
                     if (customerId.empty())
                     {
@@ -1388,7 +1376,7 @@ void adminBookingManagement(ParkingManager &manager)
                 {
                     auto ticket = manager.getTicket(ticketId);
                     ui.showSuccessMessage("Check-out thanh cong!");
-                    ticket->displayInfo(); // In vé đầy đủ
+                    ticket->displayInfo(); 
                 }
                 break;
             }
@@ -1433,7 +1421,7 @@ void adminTicketManagement(ParkingManager &manager)
                 }
                 else
                 {
-                    int widths[] = {17, 13, 17, 21, 16};
+                    int widths[] = {17, 15, 17, 21, 14};
                     string headers[] = {"Ticket ID", "Vehicle ID", "Slot", "Check-in", "Status"};
                     ui.printBorder(widths, 5);
                     ui.printHeader(headers, widths, 5);

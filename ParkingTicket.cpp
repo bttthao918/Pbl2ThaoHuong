@@ -76,7 +76,7 @@ void ParkingTicket::displayInfo() const
 
 void ParkingTicket::displayTableRow() const
 {
-    // int widths[] = {17, 13, 17, 21, 16};int widths[] = {17, 13, 18, 22, 15};
+    // int widths[] = {17, 15, 17, 21, 14}
     string checkinStr = Utils::timeToString(checkInTime);
     if (checkinStr.length() > 21)
         checkinStr = checkinStr.substr(0, 18) + "...";
@@ -86,10 +86,10 @@ void ParkingTicket::displayTableRow() const
         slotStr = slotStr.substr(0, 13) + "...";
 
     cout << "          | " << setw(15) << left << ticketId
-         << " | " << setw(11) << left << vehicleId
+         << " | " << setw(13) << left << vehicleId
          << " | " << setw(15) << left << slotStr
          << " | " << setw(19) << left << checkinStr
-         << " | " << setw(14) << left << statusToString(status)
+         << " | " << setw(12) << left << statusToString(status)
          << " |" << endl;
 }
 

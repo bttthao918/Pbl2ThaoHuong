@@ -15,6 +15,7 @@ extern UI ui;
 ParkingManager::ParkingManager() : currentUser(nullptr)
 {
     loadAllData();
+    reconcileReservations();
 }
 
 ParkingManager::~ParkingManager()
@@ -26,9 +27,9 @@ ParkingManager::~ParkingManager()
 bool ParkingManager::registerUser(const string &username, const string &password,
                                   const string &fullName, const string &phone,
                                   const string &email, UserRole role,
-                                  const string &employeeID) // Thêm tham số này
+                                  const string &employeeID) 
 {
-    // Check if username already exists
+    // Check nếu username đã tồn tại
     auto existing = users.find([&](const shared_ptr<User> &u)
                                { return u->getUsername() == username; });
 
@@ -49,7 +50,6 @@ bool ParkingManager::registerUser(const string &username, const string &password
         }
         else
         {
-            // Sử dụng employeeID được truyền vào thay vì tự tạo
             if (employeeID.empty())
             {
                 throw invalid_argument("Ma nhan vien khong duoc de trong");
@@ -259,7 +259,7 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
                                      int engineCapacity, int seatCount,
                                      bool isLuxury, int battery, int maxSpeed)
 {
-    // Check if license plate already exists
+    // Check nếu biển số xe đã tồn tại
     auto existing = vehicles.find([&](const shared_ptr<Vehicle> &v)
                                   { return v->getLicensePlate() == licensePlate; });
 
@@ -270,7 +270,7 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
 
     try
     {
-        // Tạo ID dễ nhớ dựa trên thông tin khách hàng
+        // Tạo ID dựa trên thông tin khách hàng
         string vehicleId = generateVehicleId(customerId);
         shared_ptr<Vehicle> newVehicle;
 
@@ -306,7 +306,6 @@ bool ParkingManager::registerVehicle(const string &licensePlate, VehicleType typ
         vehicles.pushBack(newVehicle);
         saveVehicles();
 
-        // In ra Vehicle ID để khách hàng biết
         ui.showInfoMessage("Da tao Vehicle ID: " + vehicleId);
 
         return true;
@@ -465,7 +464,7 @@ bool ParkingManager::deleteParkingSlot(const string &slotId)
 bool ParkingManager::createBooking(const string &customerId, const string &vehicleId,
                                    time_t expectedArrival, const string &slotId)
 {
-    // Verify customer and vehicle exist
+    // Kiểm tra xem xe và khách hàng có tồn tại không
 
     if (!getCustomer(customerId))
         return false;
@@ -491,13 +490,12 @@ bool ParkingManager::createBooking(const string &customerId, const string &vehic
             return false;
     }
 
-    // create booking and attach slotId
+    // tạo booking và đính kèm slotid
     string bookingId = generateBookingId();
     Booking newBooking(bookingId, customerId, vehicleId, expectedArrival);
-    newBooking.setSlotId(slotPtr->getSlotId()); // ensure Booking has setSlotId
+    newBooking.setSlotId(slotPtr->getSlotId());
     newBooking.confirm();
 
-    // reserve slot
     slotPtr->reserve();
 
     bookings.pushBack(newBooking);
@@ -543,7 +541,7 @@ bool ParkingManager::confirmBooking(const string &bookingId)
 
 void ParkingManager::cancelBooking()
 {
-    // KIỂM TRA: Nếu là customer thì chỉ lấy booking của họ
+    // Nếu là customer thì chỉ lấy booking của họ
     DoubleLinkedList<Booking> bookingsToShow;
 
     if (currentUser && currentUser->getRole() == UserRole::CUSTOMER)
@@ -563,13 +561,13 @@ void ParkingManager::cancelBooking()
         return;
     }
 
-    // Hiển thị danh sách booking
+ 
     ui.showReportHeader("DANH SACH DON DAT CHO");
     for (auto it = bookingsToShow.begin(); it != bookingsToShow.end(); ++it)
     {
         it->displayInfo();
     }
-    // Người dùng nhập ID
+
     string bookingId = ui.inputBoxString("Nhap Booking ID can huy (0 de thoat): ");
 
     if (bookingId == "0")
@@ -585,7 +583,7 @@ void ParkingManager::cancelBooking()
         return;
     }
 
-    // KIỂM TRA QUYỀN SỞ HỮU: Customer chỉ được hủy booking của mình
+    // Customer chỉ được hủy booking của mình
     if (currentUser && currentUser->getRole() == UserRole::CUSTOMER)
     {
         if (booking->getCustomerId() != currentUser->getUserId())
@@ -763,18 +761,15 @@ bool ParkingManager::checkOut(const string &ticketId)
         throw NotFoundException("Ticket khong ton tai hoac da thanh toan");
     }
 
-    // Get vehicle to calculate fee
     auto vehicle = getVehicle(ticket->getVehicleId());
     if (!vehicle)
     {
         throw NotFoundException("Khong tim thay thong tin xe");
     }
 
-    // Calculate fee
     long long duration = ticket->getParkingDuration();
     double fee = vehicle->calculateParkingFee(duration);
 
-    // Get customer and deduct balance
     Customer *customer = getCustomer(ticket->getCustomerId());
     if (!customer)
     {
@@ -783,12 +778,31 @@ bool ParkingManager::checkOut(const string &ticketId)
 
     try
     {
-        customer->addLoyaltyPoints(static_cast<int>(fee / 1000)); // 1 point per 1000 VND
+        // mỗi 100 điểm loyalpoint => giảm giá 1000 VND
+        bool usedLoyalty = false;
+        int usedPoints = 0;
+        long long discount = 0;
+        int pointsAvailable = customer->getLoyaltyPoints();
+        if (pointsAvailable >= 100)
+        {
+            int units = pointsAvailable / 100;
+            usedPoints = units * 100;
+            discount = static_cast<long long>(units) * 1000LL;
+            fee -= static_cast<double>(discount);
+            if (fee < 0.0)
+                fee = 0.0;
+            customer->setLoyaltyPoints(pointsAvailable - usedPoints);
+            usedLoyalty = true;
+        }
 
-        // Update ticket
+        customer->addLoyaltyPoints(static_cast<int>(fee / 1000)); 
+
+        if (usedLoyalty)
+            ui.showInfoMessage("Da su dung " + to_string(usedPoints) + " diem tich luy - giam " + to_string(discount) + " VND.");
+
         ticket->checkOut(fee);
 
-        // Release slot
+        // Giải phóng slot
         ParkingSlot *slot = getParkingSlot(ticket->getSlotId());
         if (slot)
         {
@@ -1818,4 +1832,107 @@ string ParkingManager::generateBookingId()
 string ParkingManager::generateTicketId()
 {
     return Utils::generateID("T");
+}
+
+void ParkingManager::reconcileReservations()
+{
+    // Huỷ booking CONFIRMED đã quá hạn và giải phóng slot liên quan
+    for (auto it = bookings.begin(); it != bookings.end(); ++it)
+    {
+        try
+        {
+            if (it->getStatus() == BookingStatus::CONFIRMED && it->isExpired())
+            {
+                it->cancel();
+                string sid = it->getSlotId();
+                if (!sid.empty())
+                {
+                    ParkingSlot *slot = getParkingSlot(sid);
+                    if (slot && slot->getStatus() == SlotStatus::RESERVED)
+                        slot->setStatus(SlotStatus::AVAILABLE);
+                }
+            }
+        }
+        catch (...)
+        { 
+        }
+    }
+
+    // Giải phóng slot RESERVED mà không có booking CONFIRMED tương ứng
+    for (auto sit = parkingSlots.begin(); sit != parkingSlots.end(); ++sit)
+    {
+        if (sit->getStatus() == SlotStatus::RESERVED)
+        {
+            bool hasConfirmed = false;
+            for (auto bit = bookings.begin(); bit != bookings.end(); ++bit)
+            {
+                if (bit->getSlotId() == sit->getSlotId() && bit->getStatus() == BookingStatus::CONFIRMED)
+                {
+                    hasConfirmed = true;
+                    break;
+                }
+            }
+            if (!hasConfirmed)
+                sit->setStatus(SlotStatus::AVAILABLE);
+        }
+    }
+
+    try
+    {
+        // Đồng bộ trạng thái OCCUPIED giữa tickets và slots
+        std::vector<std::string> activeSlotIds;
+        for (auto tit = tickets.begin(); tit != tickets.end(); ++tit)
+        {
+            if (tit->getStatus() == TicketStatus::ACTIVE)
+            {
+                activeSlotIds.push_back(tit->getSlotId());
+            }
+        }
+
+        // Nếu slot đang OCCUPIED nhưng không có ticket ACTIVE tương ứng => giải phóng
+        for (auto sit = parkingSlots.begin(); sit != parkingSlots.end(); ++sit)
+        {
+            if (sit->getStatus() == SlotStatus::OCCUPIED)
+            {
+                bool hasActive = false;
+                for (auto &asid : activeSlotIds)
+                {
+                    if (asid == sit->getSlotId())
+                    {
+                        hasActive = true;
+                        break;
+                    }
+                }
+                if (!hasActive)
+                {
+                    sit->setStatus(SlotStatus::AVAILABLE);
+                    sit->release();
+                }
+            }
+            else
+            {
+                // Nếu có ticket ACTIVE cho slot này nhưng slot không bị OCCUPIED, đặt lại thành OCCUPIED
+                for (auto &asid : activeSlotIds)
+                {
+                    if (asid == sit->getSlotId())
+                    {
+                        try
+                        {
+                            sit->setStatus(SlotStatus::OCCUPIED);
+                        }
+                        catch (...)
+                        {
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        saveBookings();
+        saveSlots();
+    }
+    catch (...)
+    {
+    }
 }

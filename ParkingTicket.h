@@ -29,7 +29,6 @@ public:
     ParkingTicket();
     ParkingTicket(const std::string &id, const std::string &custId, const std::string &vehId, const std::string &slot);
 
-    // Getters
     std::string getTicketId() const { return ticketId; }
     std::string getCustomerId() const { return customerId; }
     std::string getVehicleId() const { return vehicleId; }

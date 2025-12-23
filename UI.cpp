@@ -12,7 +12,7 @@
 #endif
 using namespace std;
 
-// Helper: Print horizontal line with corners
+// Print horizontal line with corners
 void UI::printRow(const string &leftPart, const string &value, int totalWidth)
 {
     int contentWidth = (totalWidth > 0) ? (totalWidth - 2) : (boxWidth - 2);
@@ -78,13 +78,13 @@ void UI::printHorizontalLine(char left, char mid, char right)
     cout << right << endl;
 }
 
-// Helper: Print empty line inside box
+// Print empty line inside box
 void UI::printEmptyLine()
 {
     cout << string(leftPadding, ' ') << "|" << string(boxWidth - 2, ' ') << "|" << endl;
 }
 
-// Helper: Print centered text inside box
+// Print centered text inside box
 void UI::printCenteredText(const string &text, const string &color)
 {
     int textLen = text.length();
@@ -105,37 +105,24 @@ string UI::inputBoxString(const string &label)
 {
     string input;
 
-    // Vẽ dòng trên
     cout << string(leftPadding, ' ') << "+";
     cout << string(boxWidth - 2, '-') << "+\n";
 
-    // In label KHÔNG xuống dòng
     cout << string(leftPadding, ' ') << "| " << label;
     cout.flush();
 
-    // NHẬP trên cùng dòng
     getline(cin, input);
-
-    // SAU KHI NHẬP, CURSOR Ở DÒNG MỚI
-    // Phải dùng ANSI escape code để di chuyển lên dòng trước
-    // HOẶC vẽ lại toàn bộ dòng
-
-    // Quay lại đầu dòng trước (lên 1 dòng)
-    cout << "\033[1A"; // Di chuyển lên 1 dòng
-    cout << "\033[K";  // Xóa dòng đó
-
-    // Vẽ lại dòng hoàn chỉnh
+    cout << "\033[1A"; 
+    cout << "\033[K";  
     cout << string(leftPadding, ' ') << "| " << label << input;
 
-    // Tính padding
-    int usedSpace = 2 + label.length() + input.length() + 1; // "| " + label + input + "|"
+    int usedSpace = 2 + label.length() + input.length() + 1; 
     int pad = boxWidth - usedSpace;
     if (pad < 0)
         pad = 0;
 
     cout << string(pad, ' ') << "|\n";
 
-    // Đóng box
     cout << string(leftPadding, ' ') << "+";
     cout << string(boxWidth - 2, '-') << "+\n";
 
@@ -179,7 +166,7 @@ double UI::inputBoxDouble(const string &label)
 void UI::printInputLine(const string &label, const string &input)
 {
     string text = label + input;
-    int padR = boxWidth - 2 - text.length(); // trừ 2 ký tự "| "
+    int padR = boxWidth - 2 - text.length();
     if (padR < 0)
         padR = 0;
 
@@ -189,7 +176,7 @@ void UI::printInputLine(const string &label, const string &input)
          << "|" << endl;
 }
 
-// Helper: Get password input with asterisks
+
 string UI::getHiddenInput()
 {
     string pwd;
@@ -255,34 +242,27 @@ void UI::showLoginScreen()
 
 string UI::inputBoxPassword(const string &label)
 {
-    // Vẽ dòng trên
     cout << string(leftPadding, ' ') << "+";
     cout << string(boxWidth - 2, '-') << "+\n";
 
-    // In label KHÔNG xuống dòng
     cout << string(leftPadding, ' ') << "| " << label;
     cout.flush();
 
-    // Đọc password ẩn (getHiddenInput sẽ đọc và in '*' trong quá trình nhập)
     string pwd = getHiddenInput();
 
-    // Di chuyển lên 1 dòng và xóa để vẽ lại dòng hoàn chỉnh giống inputBoxString
-    cout << "\033[1A"; // Di chuyển lên 1 dòng
-    cout << "\033[K";  // Xóa dòng đó
+    cout << "\033[1A"; 
+    cout << "\033[K"; 
 
-    // Vẽ lại dòng với dấu '*' thay cho mật khẩu
     string masked(pwd.length(), '*');
     cout << string(leftPadding, ' ') << "| " << label << masked;
 
-    // Tính padding và đóng box
-    int usedSpace = 2 + label.length() + masked.length() + 1; // "| " + label + masked + "|"
+    int usedSpace = 2 + label.length() + masked.length() + 1;
     int pad = boxWidth - usedSpace;
     if (pad < 0)
         pad = 0;
 
     cout << string(pad, ' ') << "|\n";
 
-    // Đóng box
     cout << string(leftPadding, ' ') << "+";
     cout << string(boxWidth - 2, '-') << "+\n";
 

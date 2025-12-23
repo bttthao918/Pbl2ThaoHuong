@@ -154,6 +154,7 @@ private:
     void saveBookings();
     void loadTickets();
     void saveTickets();
+    void reconcileReservations();
 
     std::string generateUserId();
     std::string generateVehicleId(const std::string &customerId);

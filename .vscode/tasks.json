@@ -2,24 +2,29 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build and Run",
+            "label": "Build for Debug", // ← Cho Debug
             "type": "shell",
             "command": "g++",
             "args": [
                 "-std=c++17",
+                "-g", // Flag debug
                 "*.cpp",
                 "-o",
-                "main.exe",
-                "&&",
                 "main.exe"
             ],
             "group": {
                 "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "Run C++", // ← Cho chạy bình thường
+            "type": "shell",
+            "command": "g++ -std=c++17 *.cpp -o main.exe; if ($?) { ./main.exe }",
+            "group": {
+                "kind": "build",
                 "isDefault": true
-            },
-            "problemMatcher": [
-                "$gcc"
-            ]
+            }
         }
     ]
 }
